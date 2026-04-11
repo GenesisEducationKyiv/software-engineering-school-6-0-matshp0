@@ -4,11 +4,14 @@ import fastifyAutoload from '@fastify/autoload';
 import formbody from '@fastify/formbody';
 import { FastifyError, FastifyInstance, FastifyPluginOptions } from 'fastify';
 import helmet from '@fastify/helmet';
+import metricsPlugin from 'fastify-metrics';
 
 export default async function serviceApp(
   fastify: FastifyInstance,
   opts: FastifyPluginOptions,
 ) {
+  await fastify.register(metricsPlugin.default, { endpoint: '/metrics' });
+
   fastify.register(formbody);
 
   fastify.register(sensible);
