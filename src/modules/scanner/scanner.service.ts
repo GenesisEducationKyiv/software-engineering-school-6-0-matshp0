@@ -85,21 +85,22 @@ export function createScannerService(fastify: FastifyInstance) {
     const subscribers =
       await subscriptionRepository.findConfirmedByRepositoryId(repoId);
 
-    for (const subscriber of subscribers) {
-      try {
-        await mailService.sendReleaseNotification(
+    const sends = subscribers.map((subscriber) =>
+      mailService
+        .sendReleaseNotification(
           subscriber.email,
           repoFullName,
           newTag,
           subscriber.unsubToken,
-        );
-      } catch (err) {
-        log.error(
-          { err, email: subscriber.email, repo: repoFullName },
-          'Scanner: failed to send release notification',
-        );
-      }
-    }
+        )
+        .catch((err: unknown) => {
+          log.error(
+            { err, email: subscriber.email, repo: repoFullName },
+            'Scanner: failed to send release notification',
+          );
+        }),
+    );
+    await Promise.all(sends);
   }
 
   async function handleNewRelease(

@@ -20,9 +20,14 @@ export default fp(
 
     fastify.addHook('onReady', (done) => {
       void tick();
-      setInterval(() => {
+      const timer = setInterval(() => {
         void tick();
       }, intervalMs);
+
+      fastify.addHook('onClose', (_instance, closeDone) => {
+        clearInterval(timer);
+        closeDone();
+      });
 
       fastify.log.info(
         { intervalMinutes: fastify.config.SCAN_INTERVAL },
