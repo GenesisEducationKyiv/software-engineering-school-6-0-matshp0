@@ -27,7 +27,12 @@ describe('createMailService', () => {
 
   describe('sendConfirmationEmail()', () => {
     it('sends to the correct recipient with confirmation and unsub URLs', async () => {
-      await service.sendConfirmationEmail('user@test.com', 'owner/repo', 'confirm-tok', 'unsub-tok');
+      await service.sendConfirmationEmail(
+        'user@test.com',
+        'owner/repo',
+        'confirm-tok',
+        'unsub-tok',
+      );
 
       expect(fastify.mailer.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -40,7 +45,12 @@ describe('createMailService', () => {
     });
 
     it('includes the unsubscribe URL in the email body', async () => {
-      await service.sendConfirmationEmail('user@test.com', 'owner/repo', 'confirm-tok', 'unsub-tok');
+      await service.sendConfirmationEmail(
+        'user@test.com',
+        'owner/repo',
+        'confirm-tok',
+        'unsub-tok',
+      );
 
       const { text, html } = fastify.mailer.sendMail.mock.calls[0][0];
       expect(text).toContain(`${APP_URL}/api/unsubscribe/unsub-tok`);
@@ -50,20 +60,34 @@ describe('createMailService', () => {
 
   describe('sendReleaseNotification()', () => {
     it('sends to the correct recipient with release and unsub URLs', async () => {
-      await service.sendReleaseNotification('user@test.com', 'owner/repo', 'v2.0.0', 'unsub-tok');
+      await service.sendReleaseNotification(
+        'user@test.com',
+        'owner/repo',
+        'v2.0.0',
+        'unsub-tok',
+      );
 
       expect(fastify.mailer.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
           to: 'user@test.com',
           subject: 'New release: owner/repo v2.0.0',
-          text: expect.stringContaining('https://github.com/owner/repo/releases/tag/v2.0.0'),
-          html: expect.stringContaining('https://github.com/owner/repo/releases/tag/v2.0.0'),
+          text: expect.stringContaining(
+            'https://github.com/owner/repo/releases/tag/v2.0.0',
+          ),
+          html: expect.stringContaining(
+            'https://github.com/owner/repo/releases/tag/v2.0.0',
+          ),
         }),
       );
     });
 
     it('includes the unsubscribe URL in the email body', async () => {
-      await service.sendReleaseNotification('user@test.com', 'owner/repo', 'v2.0.0', 'unsub-tok');
+      await service.sendReleaseNotification(
+        'user@test.com',
+        'owner/repo',
+        'v2.0.0',
+        'unsub-tok',
+      );
 
       const { text, html } = fastify.mailer.sendMail.mock.calls[0][0];
       expect(text).toContain(`${APP_URL}/api/unsubscribe/unsub-tok`);

@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 
 export default fp(
-  async function (fastify: FastifyInstance) {
+  function (fastify: FastifyInstance, _opts: object, done: () => void) {
     const intervalMs = fastify.config.SCAN_INTERVAL * 60 * 1000;
     let isScanning = false;
 
@@ -18,15 +18,20 @@ export default fp(
       }
     };
 
-    fastify.addHook('onReady', async () => {
-      tick();
-      setInterval(tick, intervalMs);
+    fastify.addHook('onReady', (done) => {
+      void tick();
+      setInterval(() => {
+        void tick();
+      }, intervalMs);
 
       fastify.log.info(
         { intervalMinutes: fastify.config.SCAN_INTERVAL },
         'Scanner: started',
       );
+      done();
     });
+
+    done();
   },
   {
     name: 'scannerPlugin',

@@ -67,9 +67,10 @@ export class GhRepoRepository {
 }
 
 export default fp(
-  async function (fastify: FastifyInstance) {
+  function (fastify: FastifyInstance, _opts: object, done: () => void) {
     const { kysely } = fastify;
     fastify.decorate('ghRepoRepository', new GhRepoRepository(kysely));
+    done();
   },
   {
     name: 'ghRepoRepository',

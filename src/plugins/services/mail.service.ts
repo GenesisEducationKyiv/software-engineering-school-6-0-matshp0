@@ -48,8 +48,9 @@ export function createMailService(fastify: FastifyInstance) {
 }
 
 export default fp(
-  async (fastify: FastifyInstance) => {
+  (fastify: FastifyInstance, _opts: object, done: () => void) => {
     fastify.decorate('mailService', createMailService(fastify));
+    done();
   },
   {
     name: 'mailService',

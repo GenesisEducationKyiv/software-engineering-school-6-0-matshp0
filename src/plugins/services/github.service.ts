@@ -15,8 +15,9 @@ export function createGithubService(fastify: FastifyInstance) {
     try {
       const { data } = await octokit.repos.get({ owner, repo });
       return { exists: true, data };
-    } catch (error: any) {
-      if (error.status === 404) return { exists: false as const };
+    } catch (error) {
+      if ((error as { status?: number }).status === 404)
+        return { exists: false as const };
       throw error;
     }
   }
@@ -29,8 +30,9 @@ export function createGithubService(fastify: FastifyInstance) {
         lastSeenTag: response.data.tag_name,
         etag: response.headers.etag ?? null,
       };
-    } catch (error: any) {
-      if (error.status === 404) return { lastSeenTag: null, etag: null };
+    } catch (error) {
+      if ((error as { status?: number }).status === 404)
+        return { lastSeenTag: null, etag: null };
       throw error;
     }
   }
@@ -60,8 +62,9 @@ export function createGithubService(fastify: FastifyInstance) {
 }
 
 export default fp(
-  async function (fastify: FastifyInstance) {
+  function (fastify: FastifyInstance, _opts: object, done: () => void) {
     fastify.decorate('githubService', createGithubService(fastify));
+    done();
   },
   {
     name: 'githubService',

@@ -82,7 +82,9 @@ describe('createMailer', () => {
           activeCount++;
           maxActive = Math.max(maxActive, activeCount);
           const d = deferreds[activeCount - 1];
-          return d.promise.finally(() => activeCount--);
+          return d.promise.finally(() => {
+            activeCount--;
+          });
         },
       );
 
@@ -100,7 +102,9 @@ describe('createMailer', () => {
       await new Promise((r) => setTimeout(r, 0));
       expect(transporter.sendMail).toHaveBeenCalledTimes(6);
 
-      deferreds.slice(1).forEach((d) => d.resolve());
+      deferreds.slice(1).forEach((d) => {
+        d.resolve();
+      });
       await Promise.all(sends);
     });
   });
@@ -119,8 +123,8 @@ describe('createMailer', () => {
         .mockReturnValueOnce(d2.promise);
 
       const mailer = createMailer(transporter, log as any);
-      mailer.sendMail(buildJob({ to: 'a@test.com' }));
-      mailer.sendMail(buildJob({ to: 'b@test.com' }));
+      void mailer.sendMail(buildJob({ to: 'a@test.com' }));
+      void mailer.sendMail(buildJob({ to: 'b@test.com' }));
 
       let drained = false;
       const drainPromise = mailer.drain().then(() => {

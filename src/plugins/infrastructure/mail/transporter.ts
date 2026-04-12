@@ -29,7 +29,10 @@ declare module 'fastify' {
   }
 }
 
-export function createMailer(transporter: nodemailer.Transporter, log: FastifyInstance['log']): Mailer {
+export function createMailer(
+  transporter: nodemailer.Transporter,
+  log: FastifyInstance['log'],
+): Mailer {
   let active = 0;
   const queue: QueueItem[] = [];
   let drainResolve: (() => void) | null = null;
@@ -75,7 +78,7 @@ export function createMailer(transporter: nodemailer.Transporter, log: FastifyIn
 }
 
 export default fp(
-  async (fastify: FastifyInstance) => {
+  (fastify: FastifyInstance, _opts: object, done: () => void) => {
     const { MAIL_HOST, MAIL_PORT, MAIL_USER, MAIL_PASS } = fastify.config;
 
     const transporter = nodemailer.createTransport({
@@ -91,6 +94,8 @@ export default fp(
       await mailer.drain();
       transporter.close();
     });
+
+    done();
   },
   { name: 'mailer' },
 );

@@ -69,8 +69,9 @@ export function createSubscriptionService(fastify: FastifyInstance) {
 }
 
 export default fp(
-  async (fastify) => {
+  (fastify, _opts, done) => {
     fastify.decorate('subscriptionService', createSubscriptionService(fastify));
+    done();
   },
   {
     name: 'subscriptionService',

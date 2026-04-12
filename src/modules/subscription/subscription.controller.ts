@@ -4,6 +4,7 @@ import { confirmSchema } from './schemas/confirm.schema.js';
 import { unsubscribeSchema } from './schemas/unsubscribe.schema.js';
 import { getSubscriptionsSchema } from './schemas/getSubscriptions.schema.js';
 
+// eslint-disable-next-line @typescript-eslint/require-await
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.post(
     '/subscribe',
@@ -40,7 +41,7 @@ const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
   fastify.get(
     '/subscriptions',
     { schema: getSubscriptionsSchema },
-    async (request, reply) => {
+    async (request) => {
       const { email } = request.query;
       return fastify.subscriptionService.getSubscriptionsByEmail(email);
     },

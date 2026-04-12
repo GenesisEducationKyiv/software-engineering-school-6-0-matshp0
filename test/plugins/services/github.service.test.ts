@@ -18,8 +18,10 @@ function buildMockFastify() {
       create: vi.fn(),
     },
     httpErrors: {
-      notFound: (msg: string) => Object.assign(new Error(msg), { statusCode: 404 }),
-      internalServerError: () => Object.assign(new Error('Internal Server Error'), { statusCode: 500 }),
+      notFound: (msg: string) =>
+        Object.assign(new Error(msg), { statusCode: 404 }),
+      internalServerError: () =>
+        Object.assign(new Error('Internal Server Error'), { statusCode: 500 }),
     },
     log: { info: vi.fn() },
   };
@@ -67,7 +69,9 @@ describe('createGithubService', () => {
       fastify.ghRepoRepository.findByFullName.mockResolvedValue(null);
       fastify.octokit.repos.get.mockRejectedValue(buildApiError(404));
 
-      await expect(service.ensureRepoExists('owner/repo')).rejects.toMatchObject({
+      await expect(
+        service.ensureRepoExists('owner/repo'),
+      ).rejects.toMatchObject({
         statusCode: 404,
       });
       expect(fastify.ghRepoRepository.create).not.toHaveBeenCalled();
@@ -96,8 +100,12 @@ describe('createGithubService', () => {
     it('stores null tag and etag when repo has no releases', async () => {
       fastify.ghRepoRepository.findByFullName.mockResolvedValue(null);
       fastify.octokit.repos.get.mockResolvedValue({ data: {} });
-      fastify.octokit.repos.getLatestRelease.mockRejectedValue(buildApiError(404));
-      fastify.ghRepoRepository.create.mockResolvedValue(buildRepo({ lastSeenTag: null, etag: null }));
+      fastify.octokit.repos.getLatestRelease.mockRejectedValue(
+        buildApiError(404),
+      );
+      fastify.ghRepoRepository.create.mockResolvedValue(
+        buildRepo({ lastSeenTag: null, etag: null }),
+      );
 
       await service.ensureRepoExists('owner/repo');
 
@@ -116,7 +124,9 @@ describe('createGithubService', () => {
         data: { tag_name: 'v1.0.0' },
         headers: { etag: null },
       });
-      fastify.ghRepoRepository.create.mockRejectedValue(new AlreadyExistsError());
+      fastify.ghRepoRepository.create.mockRejectedValue(
+        new AlreadyExistsError(),
+      );
 
       const result = await service.ensureRepoExists('owner/repo');
 
@@ -127,7 +137,9 @@ describe('createGithubService', () => {
       fastify.ghRepoRepository.findByFullName.mockResolvedValue(null);
       fastify.octokit.repos.get.mockRejectedValue(buildApiError(500));
 
-      await expect(service.ensureRepoExists('owner/repo')).rejects.toMatchObject({
+      await expect(
+        service.ensureRepoExists('owner/repo'),
+      ).rejects.toMatchObject({
         status: 500,
       });
     });

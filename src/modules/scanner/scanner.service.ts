@@ -31,7 +31,10 @@ export function createScannerService(fastify: FastifyInstance) {
       waitSeconds = parseInt(retryAfter, 10);
     } else if (resetAt) {
       const resetTimestamp = parseInt(resetAt, 10) * 1000;
-      waitSeconds = Math.max(0, Math.ceil((resetTimestamp - Date.now()) / 1000));
+      waitSeconds = Math.max(
+        0,
+        Math.ceil((resetTimestamp - Date.now()) / 1000),
+      );
     }
 
     suspendedUntil = new Date(Date.now() + waitSeconds * 1000);
@@ -64,8 +67,9 @@ export function createScannerService(fastify: FastifyInstance) {
         newEtag:
           (response.headers as Record<string, string | undefined>).etag ?? null,
       };
-    } catch (error: any) {
-      if (error.status === 404) {
+    } catch (error) {
+      const err = error as { status?: number };
+      if (err.status === 404) {
         log.debug({ repo: `${owner}/${name}` }, 'Scanner: no releases found');
         return { newTag: null, newEtag: null };
       }
@@ -142,14 +146,14 @@ export function createScannerService(fastify: FastifyInstance) {
       }
 
       return false;
-    } catch (error: any) {
-      if (error.status === 304) {
-        const freshEtag =
-          (
-            error.response?.headers as
-              | Record<string, string | undefined>
-              | undefined
-          )?.etag ?? repo.etag;
+    } catch (error) {
+      const err = error as {
+        status?: number;
+        response?: { headers?: Record<string, string | undefined> };
+      };
+
+      if (err.status === 304) {
+        const freshEtag = err.response?.headers?.etag ?? repo.etag;
         await ghRepoRepository.updateById(repo.id, {
           etag: freshEtag,
           lastCheckedAt: new Date(),
@@ -157,11 +161,8 @@ export function createScannerService(fastify: FastifyInstance) {
         return false;
       }
 
-      if (error.status === 429) {
-        const headers = (error.response?.headers ?? {}) as Record<
-          string,
-          string | undefined
-        >;
+      if (err.status === 429) {
+        const headers = err.response?.headers ?? {};
         const waitSeconds = applyRateLimit(headers);
         log.warn(
           { waitSeconds, suspendedUntil },
@@ -171,7 +172,7 @@ export function createScannerService(fastify: FastifyInstance) {
       }
 
       log.error(
-        { err: error, repo: repo.fullName },
+        { err, repo: repo.fullName },
         'Scanner: error checking repository',
       );
       return false;
@@ -210,8 +211,9 @@ export function createScannerService(fastify: FastifyInstance) {
 }
 
 export default fp(
-  async (fastify) => {
+  (fastify, _opts, done) => {
     fastify.decorate('scannerService', createScannerService(fastify));
+    done();
   },
   {
     name: 'scannerService',

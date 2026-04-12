@@ -17,8 +17,9 @@ export const getOctokit = (fastify: FastifyInstance) => {
 };
 
 export default fp(
-  async (fastify: FastifyInstance) => {
+  (fastify: FastifyInstance, _opts: object, done: () => void) => {
     fastify.decorate('octokit', getOctokit(fastify));
+    done();
   },
   { name: 'octokit' },
 );

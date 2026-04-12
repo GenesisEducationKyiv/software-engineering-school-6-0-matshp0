@@ -28,12 +28,14 @@ export const getDb = (fastify: FastifyInstance) => {
 };
 
 export default fp(
-  async (fastify: FastifyInstance) => {
+  (fastify: FastifyInstance, _opts: object, done: () => void) => {
     fastify.decorate('kysely', getDb(fastify));
 
     fastify.addHook('onClose', async (instance) => {
       await instance.kysely.destroy();
     });
+
+    done();
   },
   { name: 'kysely' },
 );
