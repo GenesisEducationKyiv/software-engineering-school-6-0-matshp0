@@ -1,11 +1,15 @@
 services:
   app:
+    build:
+      context: .
+      target: production
     env_file:
       - path: .env.development
         required: false
     ports:
       - "${PORT:-3000}:3000"
     environment:
+      PORT: ${PORT:-3000}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
       MAIL_HOST: mailpit
@@ -20,6 +24,9 @@ services:
         condition: service_started
 
   migrate:
+    build:
+      context: .
+      target: migrator
     env_file:
       - path: .env.development
         required: false
