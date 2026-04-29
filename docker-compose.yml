@@ -1,87 +1,14 @@
 services:
   app:
-    build: .
-    ports:
-      - "${PORT:-3000}:3000"
+    build:
+      context: .
+      target: production
     environment:
       PORT: ${PORT:-3000}
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: ${POSTGRES_USER:-myuser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mypassword}
-      POSTGRES_DATABASE: ${POSTGRES_DATABASE:-github_notifier}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-myuser}:${POSTGRES_PASSWORD:-mypassword}@postgres:5432/${POSTGRES_DATABASE:-github_notifier}
-      MAIL_HOST: mailpit
-      MAIL_PORT: 1025
-      MAIL_USER: ${MAIL_USER:-}
-      MAIL_PASS: ${MAIL_PASS:-}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
-      APP_URL: ${APP_URL:-http://localhost:3000}
       SCAN_INTERVAL: ${SCAN_INTERVAL:-5}
-    depends_on:
-      postgres:
-        condition: service_healthy
-      mailpit:
-        condition: service_started
-    restart: unless-stopped
 
   migrate:
     build:
       context: .
       target: migrator
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-myuser}:${POSTGRES_PASSWORD:-mypassword}@postgres:5432/${POSTGRES_DATABASE:-github_notifier}
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: on-failure
-
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-myuser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mypassword}
-      POSTGRES_DB: ${POSTGRES_DATABASE:-github_notifier}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "${POSTGRES_PORT:-5432}:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-myuser} -d ${POSTGRES_DATABASE:-github_notifier}"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  mailpit:
-    image: axllent/mailpit:latest
-    ports:
-      - "1025:1025"
-      - "8025:8025"
-
-  prometheus:
-    image: prom/prometheus:latest
-    volumes:
-      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    ports:
-      - "9090:9090"
-    depends_on:
-      - app
-
-  grafana:
-    image: grafana/grafana:latest
-    environment:
-      GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
-    volumes:
-      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
-      - grafana_data:/var/lib/grafana
-    ports:
-      - "3001:3000"
-    depends_on:
-      - prometheus
-
-volumes:
-  postgres_data:
-  prometheus_data:
-  grafana_data:
