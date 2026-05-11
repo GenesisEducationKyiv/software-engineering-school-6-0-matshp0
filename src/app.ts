@@ -5,6 +5,11 @@ import formbody from '@fastify/formbody';
 import { FastifyError, FastifyInstance } from 'fastify';
 import helmet from '@fastify/helmet';
 import metricsPlugin from 'fastify-metrics';
+import {
+  ConflictError,
+  DomainError,
+  NotFoundError,
+} from './common/errors/index.js';
 
 export default async function serviceApp(fastify: FastifyInstance) {
   await fastify.register(metricsPlugin.default, { endpoint: '/metrics' });
@@ -51,6 +56,12 @@ export default async function serviceApp(fastify: FastifyInstance) {
       'Unhandled error occurred',
     );
 
+    if (err instanceof DomainError) {
+      const statusCode = mapDomainErrorToStatus(err);
+      reply.code(statusCode);
+      return { message: err.message };
+    }
+
     reply.code(err.statusCode ?? 500);
 
     let message = 'Internal Server Error';
@@ -60,4 +71,10 @@ export default async function serviceApp(fastify: FastifyInstance) {
 
     return { message };
   });
+}
+
+function mapDomainErrorToStatus(err: DomainError): number {
+  if (err instanceof NotFoundError) return 404;
+  if (err instanceof ConflictError) return 409;
+  return 500;
 }

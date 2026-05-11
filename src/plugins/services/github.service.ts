@@ -1,6 +1,9 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { AlreadyExistsError } from '../../common/errors/index.js';
+import {
+  AlreadyExistsError,
+  NotFoundError,
+} from '../../common/errors/index.js';
 import { IGhRepoRepository } from '../../common/interfaces/repositories/gh-repo.repository.interface.js';
 import { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
 
@@ -14,11 +17,6 @@ interface IOctokit {
   };
 }
 
-interface IHttpErrors {
-  notFound(message: string): Error;
-  internalServerError(): Error;
-}
-
 interface ILogger {
   info(data: unknown): void;
 }
@@ -26,7 +24,6 @@ interface ILogger {
 export interface GithubServiceDeps {
   octokit: IOctokit;
   ghRepoRepository: IGhRepoRepository;
-  httpErrors: IHttpErrors;
   log: ILogger;
 }
 
@@ -37,7 +34,7 @@ declare module 'fastify' {
 }
 
 export function createGithubService(deps: GithubServiceDeps): IGithubService {
-  const { octokit, ghRepoRepository, httpErrors, log } = deps;
+  const { octokit, ghRepoRepository, log } = deps;
 
   async function validateRepo(owner: string, repo: string) {
     try {
@@ -72,7 +69,7 @@ export function createGithubService(deps: GithubServiceDeps): IGithubService {
 
       const [owner, name] = fullName.split('/');
       const { exists } = await validateRepo(owner, name);
-      if (!exists) throw httpErrors.notFound('Repository not found on GitHub');
+      if (!exists) throw new NotFoundError('Repository not found on GitHub');
 
       const { lastSeenTag, etag } = await fetchLatestRelease(owner, name);
       log.info({ lastSeenTag, etag });
@@ -82,7 +79,8 @@ export function createGithubService(deps: GithubServiceDeps): IGithubService {
       } catch (error) {
         if (!(error instanceof AlreadyExistsError)) throw error;
         const repo = await ghRepoRepository.findByFullName(fullName);
-        if (!repo) throw httpErrors.internalServerError();
+        if (!repo)
+          throw new Error('Repository disappeared after concurrent insert');
         return repo;
       }
     },
@@ -96,7 +94,6 @@ export default fp(
       createGithubService({
         octokit: fastify.octokit,
         ghRepoRepository: fastify.ghRepoRepository,
-        httpErrors: fastify.httpErrors,
         log: fastify.log,
       }),
     );

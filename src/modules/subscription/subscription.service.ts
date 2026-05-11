@@ -1,14 +1,13 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { AlreadyExistsError } from '../../common/errors/index.js';
+import {
+  AlreadyExistsError,
+  ConflictError,
+  NotFoundError,
+} from '../../common/errors/index.js';
 import { Notifier } from '../../common/notifier.js';
 import { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.js';
 import { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
-
-interface IHttpErrors {
-  conflict(message: string): Error;
-  notFound(message: string): Error;
-}
 
 interface ILogger {
   info(data: unknown): void;
@@ -17,7 +16,6 @@ interface ILogger {
 export interface SubscriptionServiceDeps {
   githubService: IGithubService;
   subscriptionRepository: ISubscriptionRepository;
-  httpErrors: IHttpErrors;
   notifier: Notifier;
   log: ILogger;
 }
@@ -29,8 +27,7 @@ declare module 'fastify' {
 }
 
 export function createSubscriptionService(deps: SubscriptionServiceDeps) {
-  const { githubService, subscriptionRepository, httpErrors, notifier, log } =
-    deps;
+  const { githubService, subscriptionRepository, notifier, log } = deps;
 
   return {
     async subscribe(email: string, repoFullName: string) {
@@ -43,7 +40,7 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
         });
       } catch (error) {
         if (error instanceof AlreadyExistsError)
-          throw httpErrors.conflict(
+          throw new ConflictError(
             'Email already subscribed to this repository',
           );
         throw error;
@@ -60,7 +57,7 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
     async confirmSubscription(token: string) {
       const subscription =
         await subscriptionRepository.findByConfirmToken(token);
-      if (!subscription) throw httpErrors.notFound('Token not found');
+      if (!subscription) throw new NotFoundError('Token not found');
       await subscriptionRepository.updateById(subscription.id, {
         status: 'confirmed',
       });
@@ -68,7 +65,7 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
 
     async unsubscribe(token: string) {
       const subscription = await subscriptionRepository.findByUnsubToken(token);
-      if (!subscription) throw httpErrors.notFound('Token not found');
+      if (!subscription) throw new NotFoundError('Token not found');
       await subscriptionRepository.delete(subscription.id);
     },
 
@@ -92,7 +89,6 @@ export default fp(
       createSubscriptionService({
         githubService: fastify.githubService,
         subscriptionRepository: fastify.subscriptionRepository,
-        httpErrors: fastify.httpErrors,
         notifier: fastify.mailService,
         log: fastify.log,
       }),

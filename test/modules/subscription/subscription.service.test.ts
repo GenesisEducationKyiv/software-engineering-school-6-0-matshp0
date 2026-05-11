@@ -3,20 +3,13 @@ import {
   createSubscriptionService,
   SubscriptionServiceDeps,
 } from '../../../src/modules/subscription/subscription.service.js';
-import { AlreadyExistsError } from '../../../src/common/errors/index.js';
+import {
+  AlreadyExistsError,
+  ConflictError,
+  NotFoundError,
+} from '../../../src/common/errors/index.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-
-function buildHttpErrors() {
-  return {
-    conflict: (msg: string) =>
-      Object.assign(new Error(msg), { statusCode: 409 }),
-    notFound: (msg: string) =>
-      Object.assign(new Error(msg), { statusCode: 404 }),
-    internalServerError: () =>
-      Object.assign(new Error('Internal Server Error'), { statusCode: 500 }),
-  };
-}
 
 function buildMockDeps() {
   return {
@@ -33,7 +26,6 @@ function buildMockDeps() {
       sendConfirmationEmail: vi.fn().mockResolvedValue(undefined),
       sendReleaseNotification: vi.fn().mockResolvedValue(undefined),
     },
-    httpErrors: buildHttpErrors(),
     log: { info: vi.fn() },
   };
 }
@@ -90,7 +82,7 @@ describe('createSubscriptionService', () => {
       );
     });
 
-    it('throws conflict when email is already subscribed to the repository', async () => {
+    it('throws ConflictError when email is already subscribed to the repository', async () => {
       deps.githubService.ensureRepoExists.mockResolvedValue(buildRepo());
       deps.subscriptionRepository.create.mockRejectedValue(
         new AlreadyExistsError(),
@@ -98,9 +90,7 @@ describe('createSubscriptionService', () => {
 
       await expect(
         service.subscribe('user@test.com', 'owner/repo'),
-      ).rejects.toMatchObject({
-        statusCode: 409,
-      });
+      ).rejects.toBeInstanceOf(ConflictError);
       expect(deps.notifier.sendConfirmationEmail).not.toHaveBeenCalled();
     });
   });
@@ -120,14 +110,12 @@ describe('createSubscriptionService', () => {
       );
     });
 
-    it('throws 404 when confirm token is not found', async () => {
+    it('throws NotFoundError when confirm token is not found', async () => {
       deps.subscriptionRepository.findByConfirmToken.mockResolvedValue(null);
 
       await expect(
         service.confirmSubscription('bad-token'),
-      ).rejects.toMatchObject({
-        statusCode: 404,
-      });
+      ).rejects.toBeInstanceOf(NotFoundError);
     });
   });
 
@@ -145,12 +133,12 @@ describe('createSubscriptionService', () => {
       );
     });
 
-    it('throws 404 when unsub token is not found', async () => {
+    it('throws NotFoundError when unsub token is not found', async () => {
       deps.subscriptionRepository.findByUnsubToken.mockResolvedValue(null);
 
-      await expect(service.unsubscribe('bad-token')).rejects.toMatchObject({
-        statusCode: 404,
-      });
+      await expect(service.unsubscribe('bad-token')).rejects.toBeInstanceOf(
+        NotFoundError,
+      );
     });
   });
 

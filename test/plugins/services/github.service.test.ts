@@ -3,7 +3,10 @@ import {
   createGithubService,
   GithubServiceDeps,
 } from '../../../src/plugins/services/github.service.js';
-import { AlreadyExistsError } from '../../../src/common/errors/index.js';
+import {
+  AlreadyExistsError,
+  NotFoundError,
+} from '../../../src/common/errors/index.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -18,12 +21,6 @@ function buildMockDeps() {
     ghRepoRepository: {
       findByFullName: vi.fn(),
       create: vi.fn(),
-    },
-    httpErrors: {
-      notFound: (msg: string) =>
-        Object.assign(new Error(msg), { statusCode: 404 }),
-      internalServerError: () =>
-        Object.assign(new Error('Internal Server Error'), { statusCode: 500 }),
     },
     log: { info: vi.fn() },
   };
@@ -67,15 +64,13 @@ describe('createGithubService', () => {
       expect(deps.octokit.repos.get).not.toHaveBeenCalled();
     });
 
-    it('throws 404 when repository does not exist on GitHub', async () => {
+    it('throws NotFoundError when repository does not exist on GitHub', async () => {
       deps.ghRepoRepository.findByFullName.mockResolvedValue(null);
       deps.octokit.repos.get.mockRejectedValue(buildApiError(404));
 
       await expect(
         service.ensureRepoExists('owner/repo'),
-      ).rejects.toMatchObject({
-        statusCode: 404,
-      });
+      ).rejects.toBeInstanceOf(NotFoundError);
       expect(deps.ghRepoRepository.create).not.toHaveBeenCalled();
     });
 
