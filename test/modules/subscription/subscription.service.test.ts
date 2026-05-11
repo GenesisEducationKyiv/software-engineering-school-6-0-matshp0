@@ -1,7 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createSubscriptionService } from '../../../src/modules/subscription/subscription.service.js';
+import {
+  createSubscriptionService,
+  SubscriptionServiceDeps,
+} from '../../../src/modules/subscription/subscription.service.js';
 import { AlreadyExistsError } from '../../../src/common/errors/index.js';
-import type { FastifyInstance } from 'fastify';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -16,7 +18,7 @@ function buildHttpErrors() {
   };
 }
 
-function buildMockFastify() {
+function buildMockDeps() {
   return {
     githubService: { ensureRepoExists: vi.fn() },
     subscriptionRepository: {
@@ -27,8 +29,9 @@ function buildMockFastify() {
       findAllByEmail: vi.fn(),
       delete: vi.fn(),
     },
-    mailService: {
+    notifier: {
       sendConfirmationEmail: vi.fn().mockResolvedValue(undefined),
+      sendReleaseNotification: vi.fn().mockResolvedValue(undefined),
     },
     httpErrors: buildHttpErrors(),
     log: { info: vi.fn() },
@@ -54,32 +57,32 @@ function buildSubscription(overrides = {}) {
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 describe('createSubscriptionService', () => {
-  let fastify: ReturnType<typeof buildMockFastify>;
+  let deps: ReturnType<typeof buildMockDeps>;
   let service: ReturnType<typeof createSubscriptionService>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    fastify = buildMockFastify();
-    service = createSubscriptionService(fastify as unknown as FastifyInstance);
+    deps = buildMockDeps();
+    service = createSubscriptionService(deps as SubscriptionServiceDeps);
   });
 
   describe('subscribe()', () => {
     it('ensures the repo exists, creates a subscription and sends confirmation email', async () => {
       const repo = buildRepo();
       const subscription = buildSubscription();
-      fastify.githubService.ensureRepoExists.mockResolvedValue(repo);
-      fastify.subscriptionRepository.create.mockResolvedValue(subscription);
+      deps.githubService.ensureRepoExists.mockResolvedValue(repo);
+      deps.subscriptionRepository.create.mockResolvedValue(subscription);
 
       await service.subscribe('user@test.com', 'owner/repo');
 
-      expect(fastify.githubService.ensureRepoExists).toHaveBeenCalledWith(
+      expect(deps.githubService.ensureRepoExists).toHaveBeenCalledWith(
         'owner/repo',
       );
-      expect(fastify.subscriptionRepository.create).toHaveBeenCalledWith({
+      expect(deps.subscriptionRepository.create).toHaveBeenCalledWith({
         email: 'user@test.com',
         repositoryId: repo.id,
       });
-      expect(fastify.mailService.sendConfirmationEmail).toHaveBeenCalledWith(
+      expect(deps.notifier.sendConfirmationEmail).toHaveBeenCalledWith(
         'user@test.com',
         'owner/repo',
         subscription.confirmToken,
@@ -88,8 +91,8 @@ describe('createSubscriptionService', () => {
     });
 
     it('throws conflict when email is already subscribed to the repository', async () => {
-      fastify.githubService.ensureRepoExists.mockResolvedValue(buildRepo());
-      fastify.subscriptionRepository.create.mockRejectedValue(
+      deps.githubService.ensureRepoExists.mockResolvedValue(buildRepo());
+      deps.subscriptionRepository.create.mockRejectedValue(
         new AlreadyExistsError(),
       );
 
@@ -98,27 +101,27 @@ describe('createSubscriptionService', () => {
       ).rejects.toMatchObject({
         statusCode: 409,
       });
-      expect(fastify.mailService.sendConfirmationEmail).not.toHaveBeenCalled();
+      expect(deps.notifier.sendConfirmationEmail).not.toHaveBeenCalled();
     });
   });
 
   describe('confirmSubscription()', () => {
     it('sets status to confirmed for a valid token', async () => {
       const subscription = buildSubscription();
-      fastify.subscriptionRepository.findByConfirmToken.mockResolvedValue(
+      deps.subscriptionRepository.findByConfirmToken.mockResolvedValue(
         subscription,
       );
 
       await service.confirmSubscription('confirm-tok');
 
-      expect(fastify.subscriptionRepository.updateById).toHaveBeenCalledWith(
+      expect(deps.subscriptionRepository.updateById).toHaveBeenCalledWith(
         subscription.id,
         { status: 'confirmed' },
       );
     });
 
     it('throws 404 when confirm token is not found', async () => {
-      fastify.subscriptionRepository.findByConfirmToken.mockResolvedValue(null);
+      deps.subscriptionRepository.findByConfirmToken.mockResolvedValue(null);
 
       await expect(
         service.confirmSubscription('bad-token'),
@@ -131,19 +134,19 @@ describe('createSubscriptionService', () => {
   describe('unsubscribe()', () => {
     it('deletes the subscription for a valid unsub token', async () => {
       const subscription = buildSubscription({ status: 'confirmed' });
-      fastify.subscriptionRepository.findByUnsubToken.mockResolvedValue(
+      deps.subscriptionRepository.findByUnsubToken.mockResolvedValue(
         subscription,
       );
 
       await service.unsubscribe('unsub-tok');
 
-      expect(fastify.subscriptionRepository.delete).toHaveBeenCalledWith(
+      expect(deps.subscriptionRepository.delete).toHaveBeenCalledWith(
         subscription.id,
       );
     });
 
     it('throws 404 when unsub token is not found', async () => {
-      fastify.subscriptionRepository.findByUnsubToken.mockResolvedValue(null);
+      deps.subscriptionRepository.findByUnsubToken.mockResolvedValue(null);
 
       await expect(service.unsubscribe('bad-token')).rejects.toMatchObject({
         statusCode: 404,
@@ -153,7 +156,7 @@ describe('createSubscriptionService', () => {
 
   describe('getSubscriptionsByEmail()', () => {
     it('queries the repository with a confirmed-status filter and maps the result to id, email, repository', async () => {
-      fastify.subscriptionRepository.findAllByEmail.mockResolvedValue([
+      deps.subscriptionRepository.findAllByEmail.mockResolvedValue([
         {
           id: 's1',
           email: 'user@test.com',
@@ -164,16 +167,17 @@ describe('createSubscriptionService', () => {
 
       const result = await service.getSubscriptionsByEmail('user@test.com');
 
-      expect(
-        fastify.subscriptionRepository.findAllByEmail,
-      ).toHaveBeenCalledWith('user@test.com', { status: 'confirmed' });
+      expect(deps.subscriptionRepository.findAllByEmail).toHaveBeenCalledWith(
+        'user@test.com',
+        { status: 'confirmed' },
+      );
       expect(result).toEqual([
         { id: 's1', email: 'user@test.com', repository: 'owner/repo' },
       ]);
     });
 
     it('returns empty array when there are no confirmed subscriptions', async () => {
-      fastify.subscriptionRepository.findAllByEmail.mockResolvedValue([]);
+      deps.subscriptionRepository.findAllByEmail.mockResolvedValue([]);
 
       const result = await service.getSubscriptionsByEmail('user@test.com');
 

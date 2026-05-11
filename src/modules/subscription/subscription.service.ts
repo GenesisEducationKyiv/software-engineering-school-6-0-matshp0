@@ -1,6 +1,26 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { AlreadyExistsError } from '../../common/errors/index.js';
+import { Notifier } from '../../common/notifier.js';
+import { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.js';
+import { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
+
+interface IHttpErrors {
+  conflict(message: string): Error;
+  notFound(message: string): Error;
+}
+
+interface ILogger {
+  info(data: unknown): void;
+}
+
+export interface SubscriptionServiceDeps {
+  githubService: IGithubService;
+  subscriptionRepository: ISubscriptionRepository;
+  httpErrors: IHttpErrors;
+  notifier: Notifier;
+  log: ILogger;
+}
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -8,14 +28,10 @@ declare module 'fastify' {
   }
 }
 
-export function createSubscriptionService(fastify: FastifyInstance) {
-  const {
-    githubService,
-    subscriptionRepository,
-    httpErrors,
-    mailService,
-    log,
-  } = fastify;
+export function createSubscriptionService(deps: SubscriptionServiceDeps) {
+  const { githubService, subscriptionRepository, httpErrors, notifier, log } =
+    deps;
+
   return {
     async subscribe(email: string, repoFullName: string) {
       const ghRepo = await githubService.ensureRepoExists(repoFullName);
@@ -33,7 +49,7 @@ export function createSubscriptionService(fastify: FastifyInstance) {
         throw error;
       }
       log.info(subscription);
-      await mailService.sendConfirmationEmail(
+      await notifier.sendConfirmationEmail(
         email,
         repoFullName,
         subscription.confirmToken,
@@ -70,8 +86,17 @@ export function createSubscriptionService(fastify: FastifyInstance) {
 }
 
 export default fp(
-  (fastify, _opts, done) => {
-    fastify.decorate('subscriptionService', createSubscriptionService(fastify));
+  (fastify: FastifyInstance, _opts, done) => {
+    fastify.decorate(
+      'subscriptionService',
+      createSubscriptionService({
+        githubService: fastify.githubService,
+        subscriptionRepository: fastify.subscriptionRepository,
+        httpErrors: fastify.httpErrors,
+        notifier: fastify.mailService,
+        log: fastify.log,
+      }),
+    );
     done();
   },
   {
