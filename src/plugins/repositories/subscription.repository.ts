@@ -1,4 +1,8 @@
-import { DB, Subscriptions } from '../infrastructure/database/types.js';
+import {
+  DB,
+  Subscriptions,
+  SubscriptionStatus,
+} from '../infrastructure/database/types.js';
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { DatabaseError } from 'pg';
@@ -51,8 +55,8 @@ export class SubscriptionRepository {
     return result ?? null;
   }
 
-  findAllByEmail(email: string) {
-    return this.db
+  findAllByEmail(email: string, filter: { status?: SubscriptionStatus } = {}) {
+    let query = this.db
       .selectFrom('subscriptions')
       .innerJoin(
         'repositories',
@@ -61,8 +65,13 @@ export class SubscriptionRepository {
       )
       .selectAll('subscriptions')
       .select(['repositories.fullName as repository'])
-      .where('subscriptions.email', '=', email)
-      .execute();
+      .where('subscriptions.email', '=', email);
+
+    if (filter.status) {
+      query = query.where('subscriptions.status', '=', filter.status);
+    }
+
+    return query.execute();
   }
 
   async findByUnsubToken(token: string) {

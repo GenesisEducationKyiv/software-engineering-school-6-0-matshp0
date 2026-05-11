@@ -57,9 +57,10 @@ export function createSubscriptionService(fastify: FastifyInstance) {
     },
 
     async getSubscriptionsByEmail(email: string) {
-      const subscriptions = await subscriptionRepository.findAllByEmail(email);
-      const filtered = subscriptions.filter((s) => s.status === 'confirmed');
-      return filtered.map((s) => ({
+      const subscriptions = await subscriptionRepository.findAllByEmail(email, {
+        status: 'confirmed',
+      });
+      return subscriptions.map((s) => ({
         id: s.id,
         email: s.email,
         repository: s.repository,

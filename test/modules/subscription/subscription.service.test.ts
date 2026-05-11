@@ -152,7 +152,7 @@ describe('createSubscriptionService', () => {
   });
 
   describe('getSubscriptionsByEmail()', () => {
-    it('returns only confirmed subscriptions mapped to id, email, repository', async () => {
+    it('queries the repository with a confirmed-status filter and maps the result to id, email, repository', async () => {
       fastify.subscriptionRepository.findAllByEmail.mockResolvedValue([
         {
           id: 's1',
@@ -160,22 +160,13 @@ describe('createSubscriptionService', () => {
           status: 'confirmed',
           repository: 'owner/repo',
         },
-        {
-          id: 's2',
-          email: 'user@test.com',
-          status: 'pending',
-          repository: 'owner/other',
-        },
-        {
-          id: 's3',
-          email: 'user@test.com',
-          status: 'unsubscribed',
-          repository: 'owner/old',
-        },
       ]);
 
       const result = await service.getSubscriptionsByEmail('user@test.com');
 
+      expect(
+        fastify.subscriptionRepository.findAllByEmail,
+      ).toHaveBeenCalledWith('user@test.com', { status: 'confirmed' });
       expect(result).toEqual([
         { id: 's1', email: 'user@test.com', repository: 'owner/repo' },
       ]);
