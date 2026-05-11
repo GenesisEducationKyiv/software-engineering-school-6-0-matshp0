@@ -1,13 +1,14 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
+import { Notifier } from '../../common/notifier.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
-    mailService: ReturnType<typeof createMailService>;
+    mailService: Notifier;
   }
 }
 
-export function createMailService(fastify: FastifyInstance) {
+export function createMailService(fastify: FastifyInstance): Notifier {
   const { mailer, config } = fastify;
 
   return {
