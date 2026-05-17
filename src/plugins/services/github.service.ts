@@ -1,20 +1,45 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { AlreadyExistsError } from '../../common/errors/index.js';
+import {
+  AlreadyExistsError,
+  NotFoundError,
+} from '../../common/errors/index.js';
+import { IGhRepoRepository } from '../../common/interfaces/repositories/gh-repo.repository.interface.js';
+import { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
+
+interface IOctokit {
+  repos: {
+    get(params: { owner: string; repo: string }): Promise<unknown>;
+    getLatestRelease(params: { owner: string; repo: string }): Promise<{
+      data: { tag_name: string };
+      headers: { etag?: string | null };
+    }>;
+  };
+}
+
+interface ILogger {
+  info(data: unknown): void;
+}
+
+export interface GithubServiceDeps {
+  octokit: IOctokit;
+  ghRepoRepository: IGhRepoRepository;
+  log: ILogger;
+}
 
 declare module 'fastify' {
   interface FastifyInstance {
-    githubService: ReturnType<typeof createGithubService>;
+    githubService: IGithubService;
   }
 }
 
-export function createGithubService(fastify: FastifyInstance) {
-  const { octokit, ghRepoRepository, httpErrors, log } = fastify;
+export function createGithubService(deps: GithubServiceDeps): IGithubService {
+  const { octokit, ghRepoRepository, log } = deps;
 
   async function validateRepo(owner: string, repo: string) {
     try {
-      const { data } = await octokit.repos.get({ owner, repo });
-      return { exists: true, data };
+      await octokit.repos.get({ owner, repo });
+      return { exists: true as const };
     } catch (error) {
       if ((error as { status?: number }).status === 404)
         return { exists: false as const };
@@ -44,7 +69,7 @@ export function createGithubService(fastify: FastifyInstance) {
 
       const [owner, name] = fullName.split('/');
       const { exists } = await validateRepo(owner, name);
-      if (!exists) throw httpErrors.notFound('Repository not found on GitHub');
+      if (!exists) throw new NotFoundError('Repository not found on GitHub');
 
       const { lastSeenTag, etag } = await fetchLatestRelease(owner, name);
       log.info({ lastSeenTag, etag });
@@ -54,7 +79,8 @@ export function createGithubService(fastify: FastifyInstance) {
       } catch (error) {
         if (!(error instanceof AlreadyExistsError)) throw error;
         const repo = await ghRepoRepository.findByFullName(fullName);
-        if (!repo) throw httpErrors.internalServerError();
+        if (!repo)
+          throw new Error('Repository disappeared after concurrent insert');
         return repo;
       }
     },
@@ -63,7 +89,14 @@ export function createGithubService(fastify: FastifyInstance) {
 
 export default fp(
   function (fastify: FastifyInstance, _opts: object, done: () => void) {
-    fastify.decorate('githubService', createGithubService(fastify));
+    fastify.decorate(
+      'githubService',
+      createGithubService({
+        octokit: fastify.octokit,
+        ghRepoRepository: fastify.ghRepoRepository,
+        log: fastify.log,
+      }),
+    );
     done();
   },
   {

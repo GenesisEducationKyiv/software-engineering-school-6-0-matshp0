@@ -1,14 +1,36 @@
 import { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
+import { Notifier } from '../../common/notifier.js';
+
+interface MailJob {
+  to: string;
+  from: string;
+  subject: string;
+  text: string;
+  html: string;
+}
+
+interface IMailer {
+  sendMail(job: MailJob): Promise<void>;
+}
+
+interface IConfig {
+  APP_URL: string;
+}
+
+export interface MailServiceDeps {
+  mailer: IMailer;
+  config: IConfig;
+}
 
 declare module 'fastify' {
   interface FastifyInstance {
-    mailService: ReturnType<typeof createMailService>;
+    mailService: Notifier;
   }
 }
 
-export function createMailService(fastify: FastifyInstance) {
-  const { mailer, config } = fastify;
+export function createMailService(deps: MailServiceDeps): Notifier {
+  const { mailer, config } = deps;
 
   return {
     sendConfirmationEmail(
@@ -49,7 +71,13 @@ export function createMailService(fastify: FastifyInstance) {
 
 export default fp(
   (fastify: FastifyInstance, _opts: object, done: () => void) => {
-    fastify.decorate('mailService', createMailService(fastify));
+    fastify.decorate(
+      'mailService',
+      createMailService({
+        mailer: fastify.mailer,
+        config: fastify.config,
+      }),
+    );
     done();
   },
   {
