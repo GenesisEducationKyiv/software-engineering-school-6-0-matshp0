@@ -51,7 +51,7 @@ describe('createMailer', () => {
       (transporter.sendMail as ReturnType<typeof vi.fn>).mockResolvedValue(
         undefined,
       );
-      const mailer = createMailer(transporter, log as any);
+      const mailer = createMailer(transporter, log as never);
       const job = buildJob();
 
       await mailer.sendMail(job);
@@ -64,7 +64,7 @@ describe('createMailer', () => {
       (transporter.sendMail as ReturnType<typeof vi.fn>).mockRejectedValue(
         error,
       );
-      const mailer = createMailer(transporter, log as any);
+      const mailer = createMailer(transporter, log as never);
 
       await expect(mailer.sendMail(buildJob())).rejects.toThrow('SMTP error');
       expect(log.error).toHaveBeenCalledOnce();
@@ -88,7 +88,7 @@ describe('createMailer', () => {
         },
       );
 
-      const mailer = createMailer(transporter, log as any);
+      const mailer = createMailer(transporter, log as never);
       const sends = Array.from({ length: 6 }, (_, i) =>
         mailer.sendMail(buildJob({ to: `user${i}@test.com` })),
       );
@@ -111,7 +111,7 @@ describe('createMailer', () => {
 
   describe('drain()', () => {
     it('resolves immediately when there is nothing in flight', async () => {
-      const mailer = createMailer(transporter, log as any);
+      const mailer = createMailer(transporter, log as never);
       await expect(mailer.drain()).resolves.toBeUndefined();
     });
 
@@ -122,7 +122,7 @@ describe('createMailer', () => {
         .mockReturnValueOnce(d1.promise)
         .mockReturnValueOnce(d2.promise);
 
-      const mailer = createMailer(transporter, log as any);
+      const mailer = createMailer(transporter, log as never);
       void mailer.sendMail(buildJob({ to: 'a@test.com' }));
       void mailer.sendMail(buildJob({ to: 'b@test.com' }));
 

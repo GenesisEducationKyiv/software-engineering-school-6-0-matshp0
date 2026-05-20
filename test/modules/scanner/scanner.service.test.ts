@@ -60,9 +60,10 @@ function buildReleaseResponse(tagName: string, etag = '"etag-new"') {
 }
 
 function buildApiError(status: number, headers: Record<string, string> = {}) {
-  const error = new Error('GitHub API error') as any;
-  error.status = status;
-  error.response = { headers };
+  const error = Object.assign(new Error('GitHub API error'), {
+    status,
+    response: { headers },
+  });
   return error;
 }
 

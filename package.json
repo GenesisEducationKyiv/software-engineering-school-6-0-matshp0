@@ -18,6 +18,8 @@
     "test": "npm run test:unit",
     "test:run": "glob -c \"tsx --test\" \"./test/**/*.ts\"",
     "test:unit": "vitest run",
+    "test:integration": "node --env-file=.env.test ./node_modules/.bin/vitest run --config vitest.config.integration.ts",
+    "test:integration:docker": "docker compose -f docker-compose.test.yml up -d --wait && npm run test:integration; EXIT_CODE=$?; docker compose -f docker-compose.test.yml down; exit $EXIT_CODE",
     "db:migrate": "node --env-file=.env node_modules/.bin/prisma migrate dev",
     "db:migrate:deploy": "node --env-file=.env node_modules/.bin/prisma migrate deploy",
     "db:migrate:status": "node --env-file=.env node_modules/.bin/prisma migrate status"
