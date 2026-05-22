@@ -16,8 +16,8 @@ npm run test:unit
 
 ## Інтеграційні тести
 
-Docker підіймає PostgreSQL і Mailpit автоматично, запускає тести і зупиняє контейнери.
+Потрібен Docker. Testcontainers автоматично піднімає PostgreSQL і Mailpit, запускає міграції, виконує тести і зупиняє контейнери.
 
 ```bash
-npm run test:integration:docker
+npm run test:integration
 ```
