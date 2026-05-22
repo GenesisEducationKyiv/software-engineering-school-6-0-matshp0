@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  createSubscriptionService,
-  SubscriptionServiceDeps,
-} from '@/modules/subscription/subscription.service.ts';
+import { createSubscriptionService } from '@/modules/subscription/subscription.service.ts';
 import {
   AlreadyExistsError,
   ConflictError,
@@ -55,7 +52,7 @@ describe('createSubscriptionService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     deps = buildMockDeps();
-    service = createSubscriptionService(deps as SubscriptionServiceDeps);
+    service = createSubscriptionService(deps);
   });
 
   describe('subscribe()', () => {

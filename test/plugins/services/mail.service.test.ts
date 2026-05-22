@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  createMailService,
-  MailServiceDeps,
-} from '@/plugins/services/mail.service.ts';
+import { createMailService } from '@/plugins/services/mail.service.ts';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -24,7 +21,7 @@ describe('createMailService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     deps = buildMockDeps();
-    service = createMailService(deps as MailServiceDeps);
+    service = createMailService(deps);
   });
 
   describe('sendConfirmationEmail()', () => {
