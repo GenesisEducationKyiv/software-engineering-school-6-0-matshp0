@@ -27,7 +27,7 @@ function mockOctokitRequest(
   fastify: FastifyInstance,
   impl: ReturnType<typeof vi.fn>,
 ) {
-  fastify.octokit.request = impl;
+  fastify.octokit.request = impl as unknown as typeof fastify.octokit.request;
 }
 
 function releaseResponse(tagName: string, etag = '"etag-new"') {
@@ -78,7 +78,10 @@ describe('ScannerService (integration)', () => {
     vi.clearAllMocks();
     await clearMessages();
     await truncateTables(fastify.kysely);
-    mockOctokitRequest(fastify, vi.fn().mockResolvedValue(releaseResponse('v1.0.0')));
+    mockOctokitRequest(
+      fastify,
+      vi.fn().mockResolvedValue(releaseResponse('v1.0.0')),
+    );
   });
 
   describe('new release detected', () => {
@@ -158,7 +161,12 @@ describe('ScannerService (integration)', () => {
 
   describe('304 Not Modified', () => {
     it('updates lastCheckedAt and sends no email', async () => {
-      const repo = await seedRepo(fastify, TEST_REPO, 'v1.0.0', '"stored-etag"');
+      const repo = await seedRepo(
+        fastify,
+        TEST_REPO,
+        'v1.0.0',
+        '"stored-etag"',
+      );
       await seedConfirmedSubscription(fastify, TEST_EMAIL, repo.id);
       mockOctokitRequest(
         fastify,
