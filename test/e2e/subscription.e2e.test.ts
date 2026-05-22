@@ -195,9 +195,7 @@ describe('Subscription API (e2e)', () => {
 
       await agent.get(`/api/confirm/${sub.confirmToken}`);
 
-      const res = await agent.get(
-        `/api/subscriptions?email=${VALID_EMAIL}`,
-      );
+      const res = await agent.get(`/api/subscriptions?email=${VALID_EMAIL}`);
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveLength(1);
@@ -212,9 +210,7 @@ describe('Subscription API (e2e)', () => {
         .post('/api/subscribe')
         .send({ email: VALID_EMAIL, repository: VALID_REPO });
 
-      const res = await agent.get(
-        `/api/subscriptions?email=${VALID_EMAIL}`,
-      );
+      const res = await agent.get(`/api/subscriptions?email=${VALID_EMAIL}`);
 
       expect(res.status).toBe(200);
       expect(res.body).toHaveLength(0);
