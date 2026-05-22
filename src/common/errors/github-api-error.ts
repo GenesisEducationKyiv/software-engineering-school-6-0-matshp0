@@ -8,6 +8,6 @@ export function isGitHubApiError(error: unknown): error is GitHubApiError {
     typeof error === 'object' &&
     error !== null &&
     'status' in error &&
-    typeof (error as { status: unknown }).status === 'number'
+    typeof (error as Record<string, unknown>)['status'] === 'number'
   );
 }

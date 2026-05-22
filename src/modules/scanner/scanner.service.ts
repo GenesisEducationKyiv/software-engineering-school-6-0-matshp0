@@ -149,7 +149,10 @@ export function createScannerService(fastify: FastifyInstance) {
       return false;
     } catch (error) {
       if (!isGitHubApiError(error)) {
-        log.error({ err: error, repo: repo.fullName }, 'Scanner: error checking repository');
+        log.error(
+          { err: error, repo: repo.fullName },
+          'Scanner: error checking repository',
+        );
         return false;
       }
 
