@@ -2,11 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   createGithubService,
   GithubServiceDeps,
-} from '../../../src/plugins/services/github.service.js';
-import {
-  AlreadyExistsError,
-  NotFoundError,
-} from '../../../src/common/errors/index.js';
+} from '@/plugins/services/github.service.ts';
+import { AlreadyExistsError, NotFoundError } from '@/common/errors/index.ts';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

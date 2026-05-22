@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createMailer } from '../../../../src/plugins/infrastructure/mail/transporter.js';
+import { createMailer } from '@/plugins/infrastructure/mail/transporter.ts';
 import type nodemailer from 'nodemailer';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────

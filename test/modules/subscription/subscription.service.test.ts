@@ -2,12 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   createSubscriptionService,
   SubscriptionServiceDeps,
-} from '../../../src/modules/subscription/subscription.service.js';
+} from '@/modules/subscription/subscription.service.ts';
 import {
   AlreadyExistsError,
   ConflictError,
   NotFoundError,
-} from '../../../src/common/errors/index.js';
+} from '@/common/errors/index.ts';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   createMailService,
   MailServiceDeps,
-} from '../../../src/plugins/services/mail.service.js';
+} from '@/plugins/services/mail.service.ts';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 

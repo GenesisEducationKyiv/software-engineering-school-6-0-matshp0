@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createScannerService } from '../../../src/modules/scanner/scanner.service.js';
+import { createScannerService } from '@/modules/scanner/scanner.service.ts';
 import type { FastifyInstance } from 'fastify';
 import type { Selectable } from 'kysely';
-import type { Repositories } from '../../../src/plugins/infrastructure/database/types.js';
+import type { Repositories } from '@/plugins/infrastructure/database/types.ts';
 
 function buildMockFastify() {
   return {
