@@ -15,7 +15,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "dev": "tsx --watch=src --env-file=.env ./src/server.ts",
-    "test": "npm run test:unit",
+    "test": "npm run test:unit & npm run test:integration & wait",
     "test:run": "glob -c \"tsx --test\" \"./test/**/*.ts\"",
     "test:unit": "vitest run",
     "test:integration": "node_modules/.bin/vitest run --config vitest.config.integration.ts",
