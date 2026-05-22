@@ -6,6 +6,8 @@
     "strict": true,
     "noStrictGenericChecks": false,
     "types": ["node"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
     "paths": {
       "@/*": ["./src/*"],
       "@test/*": ["./test/*"]

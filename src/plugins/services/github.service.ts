@@ -3,9 +3,9 @@ import fp from 'fastify-plugin';
 import {
   AlreadyExistsError,
   NotFoundError,
-} from '../../common/errors/index.js';
-import type { IGhRepoRepository } from '../../common/interfaces/repositories/gh-repo.repository.interface.js';
-import type { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
+} from '../../common/errors/index.ts';
+import type { IGhRepoRepository } from '../../common/interfaces/repositories/gh-repo.repository.interface.ts';
+import type { IGithubService } from '../../common/interfaces/services/github.service.interface.ts';
 
 interface IOctokit {
   repos: {

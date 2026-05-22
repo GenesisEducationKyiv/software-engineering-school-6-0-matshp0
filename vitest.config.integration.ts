@@ -37,7 +37,7 @@ export default defineConfig({
   test: {
     fileParallelism: false,
     environment: 'node',
-    include: ['test/**/*.integration.test.ts'],
+    include: ['test/**/*.integration.test.ts', 'test/**/*.e2e.test.ts'],
     globalSetup: ['test/setup/global.setup.ts'],
     setupFiles: ['test/setup/env.setup.ts'],
     testTimeout: 30000,

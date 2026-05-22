@@ -1,6 +1,6 @@
 import Fastify from 'fastify';
 import fp from 'fastify-plugin';
-import serviceApp from './app.js';
+import serviceApp from './app.ts';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 
 function getLoggerOptions() {

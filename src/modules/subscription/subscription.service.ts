@@ -4,10 +4,10 @@ import {
   AlreadyExistsError,
   ConflictError,
   NotFoundError,
-} from '../../common/errors/index.js';
-import type { Notifier } from '../../common/notifier.js';
-import type { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.js';
-import type { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
+} from '../../common/errors/index.ts';
+import type { Notifier } from '../../common/notifier.ts';
+import type { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.ts';
+import type { IGithubService } from '../../common/interfaces/services/github.service.interface.ts';
 
 interface ILogger {
   info(data: unknown): void;

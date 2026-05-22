@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import type { Selectable } from 'kysely';
-import type { Repositories } from '../../plugins/infrastructure/database/types.js';
+import type { Repositories } from '../../plugins/infrastructure/database/types.ts';
 
 declare module 'fastify' {
   interface FastifyInstance {
