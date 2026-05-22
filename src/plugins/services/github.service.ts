@@ -1,11 +1,11 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import {
   AlreadyExistsError,
   NotFoundError,
 } from '../../common/errors/index.js';
-import { IGhRepoRepository } from '../../common/interfaces/repositories/gh-repo.repository.interface.js';
-import { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
+import type { IGhRepoRepository } from '../../common/interfaces/repositories/gh-repo.repository.interface.js';
+import type { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
 
 interface IOctokit {
   repos: {

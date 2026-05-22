@@ -1,8 +1,8 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { CamelCasePlugin, Kysely, PostgresDialect } from 'kysely';
 import { Pool } from 'pg';
-import { DB } from './types.js';
+import type { DB } from './types.js';
 
 declare module 'fastify' {
   export interface FastifyInstance {

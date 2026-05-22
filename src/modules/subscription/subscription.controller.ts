@@ -1,4 +1,4 @@
-import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
 import { subscribeSchema } from './schemas/subscribe.schema.js';
 import { confirmSchema } from './schemas/confirm.schema.js';
 import { unsubscribeSchema } from './schemas/unsubscribe.schema.js';

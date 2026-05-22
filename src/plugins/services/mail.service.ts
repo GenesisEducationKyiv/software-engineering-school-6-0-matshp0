@@ -1,6 +1,6 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { Notifier } from '../../common/notifier.js';
+import type { Notifier } from '../../common/notifier.js';
 
 interface MailJob {
   to: string;
