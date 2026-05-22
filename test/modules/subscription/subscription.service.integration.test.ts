@@ -7,119 +7,75 @@ import {
   afterAll,
   beforeEach,
 } from 'vitest';
-import nodemailer from 'nodemailer';
-import { Kysely } from 'kysely';
-import {
-  createSubscriptionService,
-  SubscriptionServiceDeps,
-} from '../../../src/modules/subscription/subscription.service.js';
-import { SubscriptionRepository } from '../../../src/plugins/repositories/subscription.repository.js';
-import { createMailService } from '../../../src/plugins/services/mail.service.js';
-import { createMailer } from '../../../src/plugins/infrastructure/mail/transporter.js';
-import {
-  ConflictError,
-  NotFoundError,
-} from '../../../src/common/errors/index.js';
-import { DB } from '../../../src/plugins/infrastructure/database/types.js';
-import { buildKysely, truncateTables } from '../../setup/db.js';
-import { clearMessages, getMessages } from '../../setup/mailpit.js';
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+import Fastify, { FastifyInstance } from 'fastify';
+import fp from 'fastify-plugin';
+import serviceApp from '@/app.ts';
+import { truncateTables } from '@test/setup/db.ts';
+import { clearMessages, getMessages } from '@test/setup/mailpit.ts';
 
 const TEST_EMAIL = 'subscriber@test.com';
 const TEST_REPO = 'owner/test-repo';
 const FAKE_UUID = '00000000-0000-0000-0000-000000000000';
 
-function createTestService(db: Kysely<DB>) {
-  const subscriptionRepository = new SubscriptionRepository(db);
-
-  const transporter = nodemailer.createTransport({
-    host: process.env.MAIL_HOST,
-    port: Number(process.env.MAIL_PORT),
-    secure: false,
-  });
-  const mailer = createMailer(transporter, {
-    error: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    debug: vi.fn(),
-  } as never);
-
-  const mailService = createMailService({
-    mailer,
-    config: { APP_URL: process.env.APP_URL ?? 'http://localhost:3000' },
-  });
-
-  const githubService: SubscriptionServiceDeps['githubService'] = {
-    ensureRepoExists: vi.fn(),
-  };
-
-  const service = createSubscriptionService({
-    githubService,
-    subscriptionRepository,
-    notifier: mailService,
-    log: { info: vi.fn() },
-  });
-
-  return { service, mailer, githubService };
+async function buildApp(): Promise<FastifyInstance> {
+  const fastify = Fastify({ logger: false });
+  fastify.register(fp(serviceApp));
+  await fastify.ready();
+  return fastify;
 }
 
-// ─── Suite ───────────────────────────────────────────────────────────────────
+function mockOctokitRepos(
+  fastify: FastifyInstance,
+  overrides: {
+    get?: ReturnType<typeof vi.fn>;
+    getLatestRelease?: ReturnType<typeof vi.fn>;
+  } = {},
+) {
+  Object.assign(fastify.octokit.repos, {
+    get: vi.fn().mockResolvedValue({}),
+    getLatestRelease: vi.fn().mockResolvedValue({
+      data: { tag_name: 'v1.0.0' },
+      headers: { etag: '"etag-abc"' },
+    }),
+    ...overrides,
+  });
+}
 
 describe('SubscriptionService (integration)', () => {
-  let db: Kysely<DB>;
-  let mailer: ReturnType<typeof createMailer>;
-  let service: ReturnType<typeof createSubscriptionService>;
-  let githubService: SubscriptionServiceDeps['githubService'];
-  let repoId: string;
+  let fastify: FastifyInstance;
 
-  beforeAll(() => {
-    db = buildKysely();
-    ({ service, mailer, githubService } = createTestService(db));
+  beforeAll(async () => {
+    fastify = await buildApp();
   });
 
   afterAll(async () => {
-    await db.destroy();
+    await fastify.close();
   });
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    mockOctokitRepos(fastify);
     await clearMessages();
-    await truncateTables(db);
-
-    const [repo] = await db
-      .insertInto('repositories')
-      .values({ fullName: TEST_REPO, lastSeenTag: null, etag: null })
-      .returningAll()
-      .execute();
-    repoId = repo.id;
-
-    (
-      githubService.ensureRepoExists as ReturnType<typeof vi.fn>
-    ).mockResolvedValue({
-      id: repoId,
-      fullName: TEST_REPO,
-    });
+    await truncateTables(fastify.kysely);
   });
 
   // ─── subscribe() ───────────────────────────────────────────────────────────
 
   describe('subscribe()', () => {
     it('creates a pending subscription in the DB', async () => {
-      await service.subscribe(TEST_EMAIL, TEST_REPO);
+      await fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO);
 
-      const rows = await db.selectFrom('subscriptions').selectAll().execute();
+      const rows = await fastify.kysely
+        .selectFrom('subscriptions')
+        .selectAll()
+        .execute();
       expect(rows).toHaveLength(1);
-      expect(rows[0]).toMatchObject({
-        email: TEST_EMAIL,
-        repositoryId: repoId,
-        status: 'pending',
-      });
+      expect(rows[0]).toMatchObject({ email: TEST_EMAIL, status: 'pending' });
     });
 
     it('sends a confirmation email to Mailpit', async () => {
-      await service.subscribe(TEST_EMAIL, TEST_REPO);
-      await mailer.drain();
+      await fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO);
+      await fastify.mailer.drain();
 
       const messages = await getMessages();
       expect(messages).toHaveLength(1);
@@ -128,27 +84,35 @@ describe('SubscriptionService (integration)', () => {
     });
 
     it('throws ConflictError when the same email subscribes to the same repo twice', async () => {
-      await service.subscribe(TEST_EMAIL, TEST_REPO);
+      await fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO);
 
       await expect(
-        service.subscribe(TEST_EMAIL, TEST_REPO),
-      ).rejects.toBeInstanceOf(ConflictError);
+        fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO),
+      ).rejects.toMatchObject({ name: 'ConflictError' });
+    });
+
+    it('throws NotFoundError when the GitHub repo does not exist', async () => {
+      mockOctokitRepos(fastify, {
+        get: vi.fn().mockRejectedValue({ status: 404 }),
+      });
+
+      await expect(
+        fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO),
+      ).rejects.toMatchObject({ name: 'NotFoundError' });
     });
   });
 
-  // ─── confirmSubscription() ─────────────────────────────────────────────────
-
   describe('confirmSubscription()', () => {
     it('sets the subscription status to confirmed', async () => {
-      await service.subscribe(TEST_EMAIL, TEST_REPO);
-      const sub = await db
+      await fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO);
+      const sub = await fastify.kysely
         .selectFrom('subscriptions')
         .selectAll()
         .executeTakeFirstOrThrow();
 
-      await service.confirmSubscription(sub.confirmToken);
+      await fastify.subscriptionService.confirmSubscription(sub.confirmToken);
 
-      const updated = await db
+      const updated = await fastify.kysely
         .selectFrom('subscriptions')
         .selectAll()
         .where('id', '=', sub.id)
@@ -158,8 +122,8 @@ describe('SubscriptionService (integration)', () => {
 
     it('throws NotFoundError for an unknown token', async () => {
       await expect(
-        service.confirmSubscription(FAKE_UUID),
-      ).rejects.toBeInstanceOf(NotFoundError);
+        fastify.subscriptionService.confirmSubscription(FAKE_UUID),
+      ).rejects.toMatchObject({ name: 'NotFoundError' });
     });
   });
 
@@ -167,15 +131,15 @@ describe('SubscriptionService (integration)', () => {
 
   describe('unsubscribe()', () => {
     it('removes the subscription from the DB', async () => {
-      await service.subscribe(TEST_EMAIL, TEST_REPO);
-      const sub = await db
+      await fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO);
+      const sub = await fastify.kysely
         .selectFrom('subscriptions')
         .selectAll()
         .executeTakeFirstOrThrow();
 
-      await service.unsubscribe(sub.unsubToken);
+      await fastify.subscriptionService.unsubscribe(sub.unsubToken);
 
-      const remaining = await db
+      const remaining = await fastify.kysely
         .selectFrom('subscriptions')
         .selectAll()
         .execute();
@@ -183,24 +147,23 @@ describe('SubscriptionService (integration)', () => {
     });
 
     it('throws NotFoundError for an unknown token', async () => {
-      await expect(service.unsubscribe(FAKE_UUID)).rejects.toBeInstanceOf(
-        NotFoundError,
-      );
+      await expect(
+        fastify.subscriptionService.unsubscribe(FAKE_UUID),
+      ).rejects.toMatchObject({ name: 'NotFoundError' });
     });
   });
 
-  // ─── getSubscriptionsByEmail() ─────────────────────────────────────────────
-
   describe('getSubscriptionsByEmail()', () => {
     it('returns confirmed subscriptions with email and repository', async () => {
-      await service.subscribe(TEST_EMAIL, TEST_REPO);
-      const sub = await db
+      await fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO);
+      const sub = await fastify.kysely
         .selectFrom('subscriptions')
         .selectAll()
         .executeTakeFirstOrThrow();
-      await service.confirmSubscription(sub.confirmToken);
+      await fastify.subscriptionService.confirmSubscription(sub.confirmToken);
 
-      const result = await service.getSubscriptionsByEmail(TEST_EMAIL);
+      const result =
+        await fastify.subscriptionService.getSubscriptionsByEmail(TEST_EMAIL);
 
       expect(result).toHaveLength(1);
       expect(result[0]).toMatchObject({
@@ -210,9 +173,10 @@ describe('SubscriptionService (integration)', () => {
     });
 
     it('excludes pending subscriptions', async () => {
-      await service.subscribe(TEST_EMAIL, TEST_REPO);
+      await fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO);
 
-      const result = await service.getSubscriptionsByEmail(TEST_EMAIL);
+      const result =
+        await fastify.subscriptionService.getSubscriptionsByEmail(TEST_EMAIL);
 
       expect(result).toHaveLength(0);
     });
