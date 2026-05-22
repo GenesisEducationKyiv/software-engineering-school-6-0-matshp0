@@ -12,11 +12,11 @@ export default async function serviceApp(fastify: FastifyInstance) {
 
   await fastify.register(metricsPlugin.default, { endpoint: '/metrics' });
 
-  fastify.register(formbody);
+  await fastify.register(formbody);
 
-  fastify.register(sensible);
+  await fastify.register(sensible);
 
-  fastify.register(helmet, { contentSecurityPolicy: false });
+  await fastify.register(helmet, { contentSecurityPolicy: false });
 
   await fastify.register(fastifyAutoload, {
     dir: path.join(import.meta.dirname, 'plugins/config'),
