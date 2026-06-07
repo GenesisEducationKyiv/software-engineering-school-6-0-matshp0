@@ -1,10 +1,10 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { Kysely, Insertable, Updateable, Selectable } from 'kysely';
+import type { Kysely, Insertable, Updateable, Selectable } from 'kysely';
 import { DatabaseError } from 'pg';
-import { DB, Repositories } from '../infrastructure/database/types.js';
-import { PgErrorCodes } from '../../common/constants/pgErrorCodes.js';
-import { AlreadyExistsError } from '../../common/errors/index.js';
+import type { DB, Repositories } from '../infrastructure/database/types.ts';
+import { PgErrorCodes } from '../../common/constants/pgErrorCodes.ts';
+import { AlreadyExistsError } from '../../common/errors/index.ts';
 
 type RepositoryColumn = keyof Selectable<Repositories>;
 

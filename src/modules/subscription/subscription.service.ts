@@ -1,13 +1,13 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import {
   AlreadyExistsError,
   ConflictError,
   NotFoundError,
-} from '../../common/errors/index.js';
-import { Notifier } from '../../common/notifier.js';
-import { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.js';
-import { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
+} from '../../common/errors/index.ts';
+import type { Notifier } from '../../common/notifier.ts';
+import type { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.ts';
+import type { IGithubService } from '../../common/interfaces/services/github.service.interface.ts';
 
 interface ILogger {
   info(data: unknown): void;

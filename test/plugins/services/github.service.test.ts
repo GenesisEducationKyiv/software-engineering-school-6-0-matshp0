@@ -1,12 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  createGithubService,
-  GithubServiceDeps,
-} from '../../../src/plugins/services/github.service.js';
-import {
-  AlreadyExistsError,
-  NotFoundError,
-} from '../../../src/common/errors/index.js';
+import { createGithubService } from '@/plugins/services/github.service.ts';
+import { AlreadyExistsError, NotFoundError } from '@/common/errors/index.ts';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -50,7 +44,7 @@ describe('createGithubService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     deps = buildMockDeps();
-    service = createGithubService(deps as GithubServiceDeps);
+    service = createGithubService(deps);
   });
 
   describe('ensureRepoExists()', () => {

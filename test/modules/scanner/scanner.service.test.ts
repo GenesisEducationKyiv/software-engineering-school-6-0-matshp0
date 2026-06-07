@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createScannerService } from '../../../src/modules/scanner/scanner.service.js';
+import { createScannerService } from '@/modules/scanner/scanner.service.ts';
 import type { FastifyInstance } from 'fastify';
 import type { Selectable } from 'kysely';
-import type { Repositories } from '../../../src/plugins/infrastructure/database/types.js';
+import type { Repositories } from '@/plugins/infrastructure/database/types.ts';
 
 function buildMockFastify() {
   return {
@@ -60,9 +60,10 @@ function buildReleaseResponse(tagName: string, etag = '"etag-new"') {
 }
 
 function buildApiError(status: number, headers: Record<string, string> = {}) {
-  const error = new Error('GitHub API error') as any;
-  error.status = status;
-  error.response = { headers };
+  const error = Object.assign(new Error('GitHub API error'), {
+    status,
+    response: { headers },
+  });
   return error;
 }
 

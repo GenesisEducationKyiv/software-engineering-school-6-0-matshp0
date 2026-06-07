@@ -1,5 +1,5 @@
 import { Octokit } from '@octokit/rest';
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 
 declare module 'fastify' {

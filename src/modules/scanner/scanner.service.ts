@@ -1,7 +1,8 @@
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { Selectable } from 'kysely';
-import { Repositories } from '../../plugins/infrastructure/database/types.js';
+import type { Selectable } from 'kysely';
+import type { Repositories } from '../../plugins/infrastructure/database/types.ts';
+import { isGitHubApiError } from '../../common/errors/index.ts';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -68,8 +69,7 @@ export function createScannerService(fastify: FastifyInstance) {
           (response.headers as Record<string, string | undefined>).etag ?? null,
       };
     } catch (error) {
-      const err = error as { status?: number };
-      if (err.status === 404) {
+      if (isGitHubApiError(error) && error.status === 404) {
         log.debug({ repo: `${owner}/${name}` }, 'Scanner: no releases found');
         return { newTag: null, newEtag: null };
       }
@@ -148,13 +148,16 @@ export function createScannerService(fastify: FastifyInstance) {
 
       return false;
     } catch (error) {
-      const err = error as {
-        status?: number;
-        response?: { headers?: Record<string, string | undefined> };
-      };
+      if (!isGitHubApiError(error)) {
+        log.error(
+          { err: error, repo: repo.fullName },
+          'Scanner: error checking repository',
+        );
+        return false;
+      }
 
-      if (err.status === 304) {
-        const freshEtag = err.response?.headers?.etag ?? repo.etag;
+      if (error.status === 304) {
+        const freshEtag = error.response?.headers?.etag ?? repo.etag;
         await ghRepoRepository.updateById(repo.id, {
           etag: freshEtag,
           lastCheckedAt: new Date(),
@@ -162,8 +165,8 @@ export function createScannerService(fastify: FastifyInstance) {
         return false;
       }
 
-      if (err.status === 429) {
-        const headers = err.response?.headers ?? {};
+      if (error.status === 429) {
+        const headers = error.response?.headers ?? {};
         const waitSeconds = applyRateLimit(headers);
         log.warn(
           { waitSeconds, suspendedUntil },
@@ -173,7 +176,7 @@ export function createScannerService(fastify: FastifyInstance) {
       }
 
       log.error(
-        { err, repo: repo.fullName },
+        { err: error, repo: repo.fullName },
         'Scanner: error checking repository',
       );
       return false;

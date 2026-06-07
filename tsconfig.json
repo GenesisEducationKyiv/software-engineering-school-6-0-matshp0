@@ -5,7 +5,13 @@
     "rootDir": "src",
     "strict": true,
     "noStrictGenericChecks": false,
-    "types": ["node"]
+    "types": ["node"],
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "paths": {
+      "@/*": ["./src/*"],
+      "@test/*": ["./test/*"]
+    }
   },
   "include": ["@types", "src/**/*.ts"]
 }

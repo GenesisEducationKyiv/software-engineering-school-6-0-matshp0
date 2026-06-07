@@ -1,3 +1,6 @@
+export { isGitHubApiError } from './github-api-error.ts';
+export type { GitHubApiError } from './github-api-error.ts';
+
 export abstract class DomainError extends Error {
   constructor(message: string) {
     super(message);

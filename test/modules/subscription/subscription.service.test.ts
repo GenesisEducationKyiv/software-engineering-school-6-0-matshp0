@@ -1,13 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  createSubscriptionService,
-  SubscriptionServiceDeps,
-} from '../../../src/modules/subscription/subscription.service.js';
+import { createSubscriptionService } from '@/modules/subscription/subscription.service.ts';
 import {
   AlreadyExistsError,
   ConflictError,
   NotFoundError,
-} from '../../../src/common/errors/index.js';
+} from '@/common/errors/index.ts';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -55,7 +52,7 @@ describe('createSubscriptionService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     deps = buildMockDeps();
-    service = createSubscriptionService(deps as SubscriptionServiceDeps);
+    service = createSubscriptionService(deps);
   });
 
   describe('subscribe()', () => {

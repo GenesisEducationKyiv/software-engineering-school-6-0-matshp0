@@ -12,11 +12,12 @@ export default defineConfig({
     },
   },
   test: {
+    fileParallelism: false,
     environment: 'node',
-    exclude: [
-      '**/node_modules/**',
-      'test/**/*.integration.test.ts',
-      'test/**/*.e2e.test.ts',
-    ],
+    include: ['test/**/*.integration.test.ts', 'test/**/*.e2e.test.ts'],
+    globalSetup: ['test/setup/global.setup.ts'],
+    setupFiles: ['test/setup/env.setup.ts'],
+    testTimeout: 30000,
+    execArgv: ['--import', 'tsx/esm'],
   },
 });

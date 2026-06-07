@@ -1,8 +1,8 @@
-import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
-import { subscribeSchema } from './schemas/subscribe.schema.js';
-import { confirmSchema } from './schemas/confirm.schema.js';
-import { unsubscribeSchema } from './schemas/unsubscribe.schema.js';
-import { getSubscriptionsSchema } from './schemas/getSubscriptions.schema.js';
+import type { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox';
+import { subscribeSchema } from './schemas/subscribe.schema.ts';
+import { confirmSchema } from './schemas/confirm.schema.ts';
+import { unsubscribeSchema } from './schemas/unsubscribe.schema.ts';
+import { getSubscriptionsSchema } from './schemas/getSubscriptions.schema.ts';
 
 // eslint-disable-next-line @typescript-eslint/require-await
 const plugin: FastifyPluginAsyncTypebox = async (fastify) => {
