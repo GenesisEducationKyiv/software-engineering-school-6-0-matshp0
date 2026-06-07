@@ -12,7 +12,7 @@
     "lint": "eslint",
     "lint:fix": "npm run lint -- --fix",
     "start": "npm run build && node dist/server.js",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "watch": "tsc -w",
     "dev": "tsx --watch=src --env-file=.env ./src/server.ts",
     "test": "npm run test:unit & npm run test:integration & wait",
@@ -22,7 +22,7 @@
     "db:migrate": "node --env-file=.env node_modules/.bin/prisma migrate dev",
     "db:migrate:deploy": "node --env-file=.env node_modules/.bin/prisma migrate deploy",
     "db:migrate:status": "node --env-file=.env node_modules/.bin/prisma migrate status",
-    "prepare": "husky"
+    "prepare": "node -e \"if (process.env.CI !== '1') require('child_process').execSync('husky', {stdio: 'inherit'})\""
   },
   "dependencies": {
     "@fastify/autoload": "^6.3.1",

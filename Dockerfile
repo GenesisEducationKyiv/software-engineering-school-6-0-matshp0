@@ -3,9 +3,9 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN CI=1 npm ci
 
-COPY tsconfig.json ./
+COPY tsconfig.json tsconfig.build.json ./
 COPY @types ./@types
 COPY src ./src
 
@@ -17,7 +17,7 @@ FROM node:22-alpine AS migrator
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci
+RUN CI=1 npm ci
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./prisma.config.ts
@@ -30,7 +30,7 @@ FROM node:22-alpine AS production
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN CI=1 npm ci --omit=dev
 
 COPY --from=builder /app/dist ./dist
 COPY prisma ./prisma

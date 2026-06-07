@@ -1,8 +1,8 @@
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import type { Selectable } from 'kysely';
-import type { Repositories } from '../../plugins/infrastructure/database/types.ts';
-import { isGitHubApiError } from '../../common/errors/index.ts';
+import type { Repositories } from '../../plugins/infrastructure/database/types.js';
+import { isGitHubApiError } from '../../common/errors/index.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
