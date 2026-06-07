@@ -1,27 +1,11 @@
 import Fastify from 'fastify';
 import fp from 'fastify-plugin';
-import serviceApp from './app.ts';
+import serviceApp from './app.js';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-
-function getLoggerOptions() {
-  if (process.stdout.isTTY) {
-    return {
-      level: 'info',
-      transport: {
-        target: 'pino-pretty',
-        options: {
-          translateTime: 'HH:MM:ss Z',
-          ignore: 'pid,hostname',
-        },
-      },
-    };
-  }
-
-  return { level: process.env.LOG_LEVEL ?? 'silent' };
-}
+import { buildLoggerConfig } from './common/logger.js';
 
 const app = Fastify({
-  logger: getLoggerOptions(),
+  logger: buildLoggerConfig(),
   ajv: {
     customOptions: {
       removeAdditional: 'all',

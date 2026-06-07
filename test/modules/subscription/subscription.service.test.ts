@@ -23,7 +23,7 @@ function buildMockDeps() {
       sendConfirmationEmail: vi.fn().mockResolvedValue(undefined),
       sendReleaseNotification: vi.fn().mockResolvedValue(undefined),
     },
-    log: { info: vi.fn() },
+    log: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
 }
 

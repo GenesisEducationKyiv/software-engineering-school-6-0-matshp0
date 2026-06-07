@@ -9,6 +9,7 @@ function buildMockDeps() {
   return {
     mailer: { sendMail: vi.fn().mockResolvedValue(undefined) },
     config: { APP_URL },
+    log: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
 }
 

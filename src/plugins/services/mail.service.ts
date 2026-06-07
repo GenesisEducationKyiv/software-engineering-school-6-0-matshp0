@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import type { Notifier } from '../../common/notifier.ts';
+import type { Notifier } from '../../common/notifier.js';
+import type { ILogger } from '../../common/interfaces/logger.interface.js';
 
 interface MailJob {
   to: string;
@@ -21,6 +22,7 @@ interface IConfig {
 export interface MailServiceDeps {
   mailer: IMailer;
   config: IConfig;
+  log: ILogger;
 }
 
 declare module 'fastify' {
@@ -30,7 +32,7 @@ declare module 'fastify' {
 }
 
 export function createMailService(deps: MailServiceDeps): Notifier {
-  const { mailer, config } = deps;
+  const { mailer, config, log } = deps;
 
   return {
     sendConfirmationEmail(
@@ -41,6 +43,7 @@ export function createMailService(deps: MailServiceDeps): Notifier {
     ) {
       const confirmUrl = `${config.APP_URL}/api/confirm/${confirmToken}`;
       const unsubUrl = `${config.APP_URL}/api/unsubscribe/${unsubToken}`;
+      log.info({ to: email, repo: repoFullName }, 'Queuing confirmation email');
       return mailer.sendMail({
         from: 'GitHub Notifier <noreply@github-notifier.local>',
         to: email,
@@ -58,6 +61,10 @@ export function createMailService(deps: MailServiceDeps): Notifier {
     ) {
       const releaseUrl = `https://github.com/${repoFullName}/releases/tag/${tagName}`;
       const unsubUrl = `${config.APP_URL}/api/unsubscribe/${unsubToken}`;
+      log.info(
+        { to: email, repo: repoFullName, tag: tagName },
+        'Queuing release notification email',
+      );
       return mailer.sendMail({
         from: 'GitHub Notifier <noreply@github-notifier.local>',
         to: email,
@@ -76,6 +83,7 @@ export default fp(
       createMailService({
         mailer: fastify.mailer,
         config: fastify.config,
+        log: fastify.log,
       }),
     );
     done();
