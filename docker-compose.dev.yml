@@ -17,11 +17,16 @@ services:
       MAIL_USER: ""
       MAIL_PASS: ""
       APP_URL: http://localhost:3000
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_USER: elastic
+      ELASTICSEARCH_PASS: changeme
     depends_on:
       postgres:
         condition: service_healthy
       mailpit:
         condition: service_started
+      elasticsearch:
+        condition: service_healthy
 
   migrate:
     build:
@@ -81,7 +86,47 @@ services:
     depends_on:
       - prometheus
 
+  elasticsearch:
+    image: elasticsearch:8.17.0
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=changeme
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -u elastic:changeme http://localhost:9200/_cluster/health | grep -qE '\"status\":\"(green|yellow)\"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  es-setup:
+    image: curlimages/curl:latest
+    entrypoint:
+      - sh
+      - -c
+      - |
+        curl -sf -u elastic:changeme -X POST http://elasticsearch:9200/_security/user/kibana_system/_password -H 'Content-Type: application/json' -d '{"password":"kibana_changeme"}'
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  kibana:
+    image: kibana:8.17.0
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+      ELASTICSEARCH_USERNAME: kibana_system
+      ELASTICSEARCH_PASSWORD: kibana_changeme
+    ports:
+      - "5601:5601"
+    depends_on:
+      es-setup:
+        condition: service_completed_successfully
+
 volumes:
   postgres_data:
   prometheus_data:
   grafana_data:
+  elasticsearch_data:

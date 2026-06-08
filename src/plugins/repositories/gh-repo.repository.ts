@@ -2,9 +2,9 @@ import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import type { Kysely, Insertable, Updateable, Selectable } from 'kysely';
 import { DatabaseError } from 'pg';
-import type { DB, Repositories } from '../infrastructure/database/types.ts';
-import { PgErrorCodes } from '../../common/constants/pgErrorCodes.ts';
-import { AlreadyExistsError } from '../../common/errors/index.ts';
+import type { DB, Repositories } from '../infrastructure/database/types.js';
+import { PgErrorCodes } from '../../common/constants/pgErrorCodes.js';
+import { AlreadyExistsError } from '../../common/errors/index.js';
 
 type RepositoryColumn = keyof Selectable<Repositories>;
 
@@ -34,7 +34,7 @@ export class GhRepoRepository {
         err instanceof DatabaseError &&
         err.code === PgErrorCodes.UniqueViolation
       ) {
-        throw new AlreadyExistsError();
+        throw new AlreadyExistsError('Repository already exists');
       }
       throw err;
     }

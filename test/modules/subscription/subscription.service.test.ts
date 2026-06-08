@@ -23,7 +23,7 @@ function buildMockDeps() {
       sendConfirmationEmail: vi.fn().mockResolvedValue(undefined),
       sendReleaseNotification: vi.fn().mockResolvedValue(undefined),
     },
-    log: { info: vi.fn() },
+    log: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
 }
 
@@ -82,7 +82,7 @@ describe('createSubscriptionService', () => {
     it('throws ConflictError when email is already subscribed to the repository', async () => {
       deps.githubService.ensureRepoExists.mockResolvedValue(buildRepo());
       deps.subscriptionRepository.create.mockRejectedValue(
-        new AlreadyExistsError(),
+        new AlreadyExistsError('Subscription already exists'),
       );
 
       await expect(

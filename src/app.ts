@@ -5,7 +5,7 @@ import formbody from '@fastify/formbody';
 import { FastifyInstance } from 'fastify';
 import helmet from '@fastify/helmet';
 import metricsPlugin from 'fastify-metrics';
-import { HttpErrorHandler } from './common/errors/http-error-handler.ts';
+import { HttpErrorHandler } from './common/errors/http-error-handler.js';
 
 export default async function serviceApp(fastify: FastifyInstance) {
   fastify.setErrorHandler(HttpErrorHandler(fastify));

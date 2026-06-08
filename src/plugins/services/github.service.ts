@@ -3,9 +3,10 @@ import fp from 'fastify-plugin';
 import {
   AlreadyExistsError,
   NotFoundError,
-} from '../../common/errors/index.ts';
-import type { IGhRepoRepository } from '../../common/interfaces/repositories/gh-repo.repository.interface.ts';
-import type { IGithubService } from '../../common/interfaces/services/github.service.interface.ts';
+} from '../../common/errors/index.js';
+import type { IGhRepoRepository } from '../../common/interfaces/repositories/gh-repo.repository.interface.js';
+import type { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
+import type { ILogger } from '../../common/interfaces/logger.interface.js';
 
 interface IOctokit {
   repos: {
@@ -15,10 +16,6 @@ interface IOctokit {
       headers: { etag?: string | null };
     }>;
   };
-}
-
-interface ILogger {
-  info(data: unknown): void;
 }
 
 export interface GithubServiceDeps {
@@ -41,8 +38,9 @@ export function createGithubService(deps: GithubServiceDeps): IGithubService {
       await octokit.repos.get({ owner, repo });
       return { exists: true as const };
     } catch (error) {
-      if ((error as { status?: number }).status === 404)
+      if ((error as { status?: number }).status === 404) {
         return { exists: false as const };
+      }
       throw error;
     }
   }
@@ -50,14 +48,17 @@ export function createGithubService(deps: GithubServiceDeps): IGithubService {
   async function fetchLatestRelease(owner: string, repo: string) {
     try {
       const response = await octokit.repos.getLatestRelease({ owner, repo });
-      log.info(response);
+      const lastSeenTag = response.data.tag_name;
+      log.debug({ owner, repo, lastSeenTag }, 'GitHub: fetched latest release');
       return {
-        lastSeenTag: response.data.tag_name,
+        lastSeenTag,
         etag: response.headers.etag ?? null,
       };
     } catch (error) {
-      if ((error as { status?: number }).status === 404)
+      if ((error as { status?: number }).status === 404) {
+        log.debug({ owner, repo }, 'GitHub: no releases found');
         return { lastSeenTag: null, etag: null };
+      }
       throw error;
     }
   }
@@ -72,12 +73,16 @@ export function createGithubService(deps: GithubServiceDeps): IGithubService {
       if (!exists) throw new NotFoundError('Repository not found on GitHub');
 
       const { lastSeenTag, etag } = await fetchLatestRelease(owner, name);
-      log.info({ lastSeenTag, etag });
+      log.info({ repo: fullName, lastSeenTag }, 'GitHub: tracking new repo');
 
       try {
         return await ghRepoRepository.create({ fullName, lastSeenTag, etag });
       } catch (error) {
         if (!(error instanceof AlreadyExistsError)) throw error;
+        log.debug(
+          { repo: fullName },
+          'GitHub: concurrent insert, loading existing repo',
+        );
         const repo = await ghRepoRepository.findByFullName(fullName);
         if (!repo)
           throw new Error('Repository disappeared after concurrent insert');

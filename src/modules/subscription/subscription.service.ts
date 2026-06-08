@@ -4,14 +4,11 @@ import {
   AlreadyExistsError,
   ConflictError,
   NotFoundError,
-} from '../../common/errors/index.ts';
-import type { Notifier } from '../../common/notifier.ts';
-import type { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.ts';
-import type { IGithubService } from '../../common/interfaces/services/github.service.interface.ts';
-
-interface ILogger {
-  info(data: unknown): void;
-}
+} from '../../common/errors/index.js';
+import type { Notifier } from '../../common/notifier.js';
+import type { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.js';
+import type { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
+import type { ILogger } from '../../common/interfaces/logger.interface.js';
 
 export interface SubscriptionServiceDeps {
   githubService: IGithubService;
@@ -31,6 +28,7 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
 
   return {
     async subscribe(email: string, repoFullName: string) {
+      log.info({ email, repo: repoFullName }, 'Creating subscription');
       const ghRepo = await githubService.ensureRepoExists(repoFullName);
       let subscription;
       try {
@@ -39,13 +37,17 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
           repositoryId: ghRepo.id,
         });
       } catch (error) {
-        if (error instanceof AlreadyExistsError)
+        if (error instanceof AlreadyExistsError) {
           throw new ConflictError(
             'Email already subscribed to this repository',
           );
+        }
         throw error;
       }
-      log.info(subscription);
+      log.info(
+        { subscriptionId: subscription.id, email, repo: repoFullName },
+        'Subscription created, sending confirmation email',
+      );
       await notifier.sendConfirmationEmail(
         email,
         repoFullName,
@@ -57,16 +59,28 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
     async confirmSubscription(token: string) {
       const subscription =
         await subscriptionRepository.findByConfirmToken(token);
-      if (!subscription) throw new NotFoundError('Token not found');
+      if (!subscription) {
+        throw new NotFoundError('Token not found');
+      }
       await subscriptionRepository.updateById(subscription.id, {
         status: 'confirmed',
       });
+      log.info(
+        { subscriptionId: subscription.id, email: subscription.email },
+        'Subscription confirmed',
+      );
     },
 
     async unsubscribe(token: string) {
       const subscription = await subscriptionRepository.findByUnsubToken(token);
-      if (!subscription) throw new NotFoundError('Token not found');
+      if (!subscription) {
+        throw new NotFoundError('Token not found');
+      }
       await subscriptionRepository.delete(subscription.id);
+      log.info(
+        { subscriptionId: subscription.id, email: subscription.email },
+        'Subscription removed',
+      );
     },
 
     async getSubscriptionsByEmail(email: string) {

@@ -4,8 +4,12 @@ export interface ISubscriptionRepository {
     repositoryId: string;
   }): Promise<{ id: string; confirmToken: string; unsubToken: string }>;
   updateById(id: string, data: { status: 'confirmed' }): Promise<unknown>;
-  findByConfirmToken(token: string): Promise<{ id: string } | null>;
-  findByUnsubToken(token: string): Promise<{ id: string } | null>;
+  findByConfirmToken(
+    token: string,
+  ): Promise<{ id: string; email: string } | null>;
+  findByUnsubToken(
+    token: string,
+  ): Promise<{ id: string; email: string } | null>;
   findAllByEmail(
     email: string,
     filter: { status?: 'confirmed' | 'pending' | 'unsubscribed' },

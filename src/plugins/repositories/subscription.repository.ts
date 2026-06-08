@@ -2,13 +2,13 @@ import type {
   DB,
   Subscriptions,
   SubscriptionStatus,
-} from '../infrastructure/database/types.ts';
+} from '../infrastructure/database/types.js';
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { DatabaseError } from 'pg';
 import type { Insertable, Kysely, Updateable } from 'kysely';
-import { PgErrorCodes } from '../../common/constants/pgErrorCodes.ts';
-import { AlreadyExistsError } from '../../common/errors/index.ts';
+import { PgErrorCodes } from '../../common/constants/pgErrorCodes.js';
+import { AlreadyExistsError } from '../../common/errors/index.js';
 
 declare module 'fastify' {
   interface FastifyInstance {
@@ -31,7 +31,7 @@ export class SubscriptionRepository {
         err instanceof DatabaseError &&
         err.code === PgErrorCodes.UniqueViolation
       ) {
-        throw new AlreadyExistsError();
+        throw new AlreadyExistsError('Subscription already exists');
       }
       throw err;
     }
