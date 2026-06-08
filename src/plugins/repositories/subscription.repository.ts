@@ -31,7 +31,7 @@ export class SubscriptionRepository {
         err instanceof DatabaseError &&
         err.code === PgErrorCodes.UniqueViolation
       ) {
-        throw new AlreadyExistsError();
+        throw new AlreadyExistsError('Subscription already exists');
       }
       throw err;
     }

@@ -113,7 +113,9 @@ describe('createGithubService', () => {
         data: { tag_name: 'v1.0.0' },
         headers: { etag: null },
       });
-      deps.ghRepoRepository.create.mockRejectedValue(new AlreadyExistsError());
+      deps.ghRepoRepository.create.mockRejectedValue(
+        new AlreadyExistsError('Repository already exists'),
+      );
 
       const result = await service.ensureRepoExists('owner/repo');
 

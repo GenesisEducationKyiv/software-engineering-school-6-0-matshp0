@@ -39,7 +39,6 @@ export function createGithubService(deps: GithubServiceDeps): IGithubService {
       return { exists: true as const };
     } catch (error) {
       if ((error as { status?: number }).status === 404) {
-        log.warn({ owner, repo }, 'GitHub: repository not found');
         return { exists: false as const };
       }
       throw error;

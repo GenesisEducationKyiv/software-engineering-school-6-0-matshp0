@@ -34,7 +34,7 @@ export class GhRepoRepository {
         err instanceof DatabaseError &&
         err.code === PgErrorCodes.UniqueViolation
       ) {
-        throw new AlreadyExistsError();
+        throw new AlreadyExistsError('Repository already exists');
       }
       throw err;
     }

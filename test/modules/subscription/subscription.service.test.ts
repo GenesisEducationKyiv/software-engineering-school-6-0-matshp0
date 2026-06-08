@@ -82,7 +82,7 @@ describe('createSubscriptionService', () => {
     it('throws ConflictError when email is already subscribed to the repository', async () => {
       deps.githubService.ensureRepoExists.mockResolvedValue(buildRepo());
       deps.subscriptionRepository.create.mockRejectedValue(
-        new AlreadyExistsError(),
+        new AlreadyExistsError('Subscription already exists'),
       );
 
       await expect(

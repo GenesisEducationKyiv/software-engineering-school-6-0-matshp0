@@ -38,10 +38,6 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
         });
       } catch (error) {
         if (error instanceof AlreadyExistsError) {
-          log.warn(
-            { email, repo: repoFullName },
-            'Subscription already exists',
-          );
           throw new ConflictError(
             'Email already subscribed to this repository',
           );
@@ -64,7 +60,6 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
       const subscription =
         await subscriptionRepository.findByConfirmToken(token);
       if (!subscription) {
-        log.warn('Confirm failed: token not found');
         throw new NotFoundError('Token not found');
       }
       await subscriptionRepository.updateById(subscription.id, {
@@ -79,7 +74,6 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
     async unsubscribe(token: string) {
       const subscription = await subscriptionRepository.findByUnsubToken(token);
       if (!subscription) {
-        log.warn('Unsubscribe failed: token not found');
         throw new NotFoundError('Token not found');
       }
       await subscriptionRepository.delete(subscription.id);
