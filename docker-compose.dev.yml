@@ -2,6 +2,7 @@ services:
   app:
     build:
       context: .
+      dockerfile: apps/api/Dockerfile
       target: production
     env_file:
       - path: .env.development
@@ -31,6 +32,7 @@ services:
   migrate:
     build:
       context: .
+      dockerfile: apps/api/Dockerfile
       target: migrator
     env_file:
       - path: .env.development

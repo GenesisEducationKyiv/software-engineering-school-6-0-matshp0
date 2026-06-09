@@ -178,6 +178,16 @@ This starts:
 
 Database migrations run automatically via the `migrate` service on startup.
 
+## Monorepo layout
+
+This is a pnpm + turborepo monorepo:
+
+- `apps/api` — the Fastify HTTP service (the main application).
+- `packages/*` — shared packages (added as needed).
+
+Root scripts (`build`, `lint`, `test`, `dev`, ...) run through turbo across all
+workspaces. Run a single app's script with `pnpm --filter @github-notifier/api <script>`.
+
 ## Running locally (without Docker)
 
 Prerequisites: Node.js 22, pnpm (via `corepack enable`), a running PostgreSQL instance, an SMTP server (e.g. Mailpit).

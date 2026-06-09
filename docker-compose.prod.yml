@@ -2,6 +2,7 @@ services:
   app:
     build:
       context: .
+      dockerfile: apps/api/Dockerfile
       target: production
     restart: unless-stopped
     ports:
@@ -27,6 +28,7 @@ services:
   migrate:
     build:
       context: .
+      dockerfile: apps/api/Dockerfile
       target: migrator
     restart: on-failure
     environment:
