@@ -27,12 +27,12 @@ describe('createMailService', () => {
 
   describe('sendConfirmationEmail()', () => {
     it('sends to the correct recipient with confirmation and unsub URLs', async () => {
-      await service.sendConfirmationEmail(
-        'user@test.com',
-        'owner/repo',
-        'confirm-tok',
-        'unsub-tok',
-      );
+      await service.sendConfirmationEmail({
+        email: 'user@test.com',
+        repoFullName: 'owner/repo',
+        confirmToken: 'confirm-tok',
+        unsubToken: 'unsub-tok',
+      });
 
       expect(deps.mailer.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -45,12 +45,12 @@ describe('createMailService', () => {
     });
 
     it('includes the unsubscribe URL in the email body', async () => {
-      await service.sendConfirmationEmail(
-        'user@test.com',
-        'owner/repo',
-        'confirm-tok',
-        'unsub-tok',
-      );
+      await service.sendConfirmationEmail({
+        email: 'user@test.com',
+        repoFullName: 'owner/repo',
+        confirmToken: 'confirm-tok',
+        unsubToken: 'unsub-tok',
+      });
 
       const { text, html } = deps.mailer.sendMail.mock.calls[0][0];
       expect(text).toContain(`${APP_URL}/api/unsubscribe/unsub-tok`);
@@ -60,12 +60,12 @@ describe('createMailService', () => {
 
   describe('sendReleaseNotification()', () => {
     it('sends to the correct recipient with release and unsub URLs', async () => {
-      await service.sendReleaseNotification(
-        'user@test.com',
-        'owner/repo',
-        'v2.0.0',
-        'unsub-tok',
-      );
+      await service.sendReleaseNotification({
+        email: 'user@test.com',
+        repoFullName: 'owner/repo',
+        tagName: 'v2.0.0',
+        unsubToken: 'unsub-tok',
+      });
 
       expect(deps.mailer.sendMail).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -82,12 +82,12 @@ describe('createMailService', () => {
     });
 
     it('includes the unsubscribe URL in the email body', async () => {
-      await service.sendReleaseNotification(
-        'user@test.com',
-        'owner/repo',
-        'v2.0.0',
-        'unsub-tok',
-      );
+      await service.sendReleaseNotification({
+        email: 'user@test.com',
+        repoFullName: 'owner/repo',
+        tagName: 'v2.0.0',
+        unsubToken: 'unsub-tok',
+      });
 
       const { text, html } = deps.mailer.sendMail.mock.calls[0][0];
       expect(text).toContain(`${APP_URL}/api/unsubscribe/unsub-tok`);

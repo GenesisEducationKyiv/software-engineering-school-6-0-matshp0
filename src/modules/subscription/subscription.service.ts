@@ -48,12 +48,12 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
         { subscriptionId: subscription.id, email, repo: repoFullName },
         'Subscription created, sending confirmation email',
       );
-      await notifier.sendConfirmationEmail(
+      await notifier.sendConfirmationEmail({
         email,
         repoFullName,
-        subscription.confirmToken,
-        subscription.unsubToken,
-      );
+        confirmToken: subscription.confirmToken,
+        unsubToken: subscription.unsubToken,
+      });
     },
 
     async confirmSubscription(token: string) {

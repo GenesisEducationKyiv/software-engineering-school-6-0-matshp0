@@ -35,12 +35,7 @@ export function createMailService(deps: MailServiceDeps): Notifier {
   const { mailer, config, log } = deps;
 
   return {
-    sendConfirmationEmail(
-      email: string,
-      repoFullName: string,
-      confirmToken: string,
-      unsubToken: string,
-    ) {
+    sendConfirmationEmail({ email, repoFullName, confirmToken, unsubToken }) {
       const confirmUrl = `${config.APP_URL}/api/confirm/${confirmToken}`;
       const unsubUrl = `${config.APP_URL}/api/unsubscribe/${unsubToken}`;
       log.info({ to: email, repo: repoFullName }, 'Queuing confirmation email');
@@ -53,12 +48,7 @@ export function createMailService(deps: MailServiceDeps): Notifier {
       });
     },
 
-    sendReleaseNotification(
-      email: string,
-      repoFullName: string,
-      tagName: string,
-      unsubToken: string,
-    ) {
+    sendReleaseNotification({ email, repoFullName, tagName, unsubToken }) {
       const releaseUrl = `https://github.com/${repoFullName}/releases/tag/${tagName}`;
       const unsubUrl = `${config.APP_URL}/api/unsubscribe/${unsubToken}`;
       log.info(

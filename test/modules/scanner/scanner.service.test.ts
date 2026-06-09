@@ -166,18 +166,18 @@ describe('createScannerService', () => {
       expect(fastify.mailService.sendReleaseNotification).toHaveBeenCalledTimes(
         2,
       );
-      expect(fastify.mailService.sendReleaseNotification).toHaveBeenCalledWith(
-        'a@test.com',
-        repo.fullName,
-        'v2.0.0',
-        'tok-a',
-      );
-      expect(fastify.mailService.sendReleaseNotification).toHaveBeenCalledWith(
-        'b@test.com',
-        repo.fullName,
-        'v2.0.0',
-        'tok-b',
-      );
+      expect(fastify.mailService.sendReleaseNotification).toHaveBeenCalledWith({
+        email: 'a@test.com',
+        repoFullName: repo.fullName,
+        tagName: 'v2.0.0',
+        unsubToken: 'tok-a',
+      });
+      expect(fastify.mailService.sendReleaseNotification).toHaveBeenCalledWith({
+        email: 'b@test.com',
+        repoFullName: repo.fullName,
+        tagName: 'v2.0.0',
+        unsubToken: 'tok-b',
+      });
     });
 
     it('continues notifying remaining subscribers if one email fails', async () => {

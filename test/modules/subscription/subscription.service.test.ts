@@ -71,12 +71,12 @@ describe('createSubscriptionService', () => {
         email: 'user@test.com',
         repositoryId: repo.id,
       });
-      expect(deps.notifier.sendConfirmationEmail).toHaveBeenCalledWith(
-        'user@test.com',
-        'owner/repo',
-        subscription.confirmToken,
-        subscription.unsubToken,
-      );
+      expect(deps.notifier.sendConfirmationEmail).toHaveBeenCalledWith({
+        email: 'user@test.com',
+        repoFullName: 'owner/repo',
+        confirmToken: subscription.confirmToken,
+        unsubToken: subscription.unsubToken,
+      });
     });
 
     it('throws ConflictError when email is already subscribed to the repository', async () => {

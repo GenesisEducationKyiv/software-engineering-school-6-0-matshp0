@@ -87,12 +87,12 @@ export function createScannerService(fastify: FastifyInstance) {
 
     const sends = subscribers.map((subscriber) =>
       mailService
-        .sendReleaseNotification(
-          subscriber.email,
+        .sendReleaseNotification({
+          email: subscriber.email,
           repoFullName,
-          newTag,
-          subscriber.unsubToken,
-        )
+          tagName: newTag,
+          unsubToken: subscriber.unsubToken,
+        })
         .catch((err: unknown) => {
           log.error(
             { err, email: subscriber.email, repo: repoFullName },
