@@ -10,8 +10,9 @@ import {
 import Fastify, { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import serviceApp from '@/app.ts';
+import { RoutingKey } from '@github-notifier/contracts';
 import { truncateTables } from '@test/setup/db.ts';
-import { clearMessages, getMessages } from '@test/setup/mailpit.ts';
+import { getPublishedMessages, resetQueue } from '@test/setup/rabbitmq.ts';
 
 const TEST_EMAIL = 'scanner@test.com';
 const TEST_REPO = 'owner/test-repo';
@@ -76,7 +77,7 @@ describe('ScannerService (integration)', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    await clearMessages();
+    await resetQueue();
     await truncateTables(fastify.kysely);
     mockOctokitRequest(
       fastify,
@@ -105,7 +106,7 @@ describe('ScannerService (integration)', () => {
       expect(updated.lastCheckedAt).toBeInstanceOf(Date);
     });
 
-    it('sends a release notification email to confirmed subscribers', async () => {
+    it('publishes a release notification event for confirmed subscribers', async () => {
       const repo = await seedRepo(fastify, TEST_REPO, 'v1.0.0');
       await seedConfirmedSubscription(fastify, TEST_EMAIL, repo.id);
       mockOctokitRequest(
@@ -114,11 +115,15 @@ describe('ScannerService (integration)', () => {
       );
 
       await fastify.scannerService.scan();
-      await fastify.mailer.drain();
 
-      const messages = await getMessages();
+      const messages = await getPublishedMessages();
       expect(messages).toHaveLength(1);
-      expect(messages[0].To[0].Address).toBe(TEST_EMAIL);
+      expect(messages[0].routingKey).toBe(RoutingKey.ReleaseEmail);
+      expect(messages[0].payload).toMatchObject({
+        email: TEST_EMAIL,
+        repoFullName: TEST_REPO,
+        tagName: 'v2.0.0',
+      });
     });
   });
 
@@ -143,7 +148,7 @@ describe('ScannerService (integration)', () => {
       expect(updated.lastCheckedAt).toBeInstanceOf(Date);
     });
 
-    it('sends no email when release is unchanged', async () => {
+    it('publishes no event when release is unchanged', async () => {
       const repo = await seedRepo(fastify, TEST_REPO, 'v1.0.0');
       await seedConfirmedSubscription(fastify, TEST_EMAIL, repo.id);
       mockOctokitRequest(
@@ -152,15 +157,14 @@ describe('ScannerService (integration)', () => {
       );
 
       await fastify.scannerService.scan();
-      await fastify.mailer.drain();
 
-      const messages = await getMessages();
+      const messages = await getPublishedMessages();
       expect(messages).toHaveLength(0);
     });
   });
 
   describe('304 Not Modified', () => {
-    it('updates lastCheckedAt and sends no email', async () => {
+    it('updates lastCheckedAt and publishes no event', async () => {
       const repo = await seedRepo(
         fastify,
         TEST_REPO,
@@ -177,7 +181,6 @@ describe('ScannerService (integration)', () => {
       );
 
       await fastify.scannerService.scan();
-      await fastify.mailer.drain();
 
       const updated = await fastify.kysely
         .selectFrom('repositories')
@@ -187,13 +190,13 @@ describe('ScannerService (integration)', () => {
 
       expect(updated.lastCheckedAt).toBeInstanceOf(Date);
       expect(updated.lastSeenTag).toBe('v1.0.0');
-      const messages = await getMessages();
+      const messages = await getPublishedMessages();
       expect(messages).toHaveLength(0);
     });
   });
 
   describe('no confirmed subscribers', () => {
-    it('updates DB but sends no email', async () => {
+    it('updates DB but publishes no event', async () => {
       await seedRepo(fastify, TEST_REPO, 'v1.0.0');
       mockOctokitRequest(
         fastify,
@@ -201,9 +204,8 @@ describe('ScannerService (integration)', () => {
       );
 
       await fastify.scannerService.scan();
-      await fastify.mailer.drain();
 
-      const messages = await getMessages();
+      const messages = await getPublishedMessages();
       expect(messages).toHaveLength(0);
     });
   });
@@ -239,7 +241,7 @@ describe('ScannerService (integration)', () => {
       expect(r2.lastSeenTag).toBe('v2.1.0');
     });
 
-    it('sends emails to subscribers of each updated repo', async () => {
+    it('publishes an event for subscribers of each updated repo', async () => {
       const repo1 = await seedRepo(fastify, 'owner/repo-one', 'v1.0.0');
       const repo2 = await seedRepo(fastify, 'owner/repo-two', 'v2.0.0');
       await seedConfirmedSubscription(fastify, 'sub1@test.com', repo1.id);
@@ -253,9 +255,8 @@ describe('ScannerService (integration)', () => {
       );
 
       await fastify.scannerService.scan();
-      await fastify.mailer.drain();
 
-      const messages = await getMessages();
+      const messages = await getPublishedMessages();
       expect(messages).toHaveLength(2);
     });
   });

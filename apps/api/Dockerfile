@@ -10,17 +10,20 @@ FROM base AS builder
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/
+COPY packages/contracts/package.json ./packages/contracts/
 RUN CI=1 pnpm install --frozen-lockfile --filter @github-notifier/api...
 
+COPY packages/contracts ./packages/contracts
 COPY apps/api ./apps/api
 
-RUN pnpm --filter @github-notifier/api build
+RUN pnpm --filter @github-notifier/api... build
 
 
 FROM base AS migrator
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/
+COPY packages/contracts/package.json ./packages/contracts/
 RUN CI=1 pnpm install --frozen-lockfile --filter @github-notifier/api...
 
 COPY apps/api/prisma ./apps/api/prisma
@@ -35,8 +38,10 @@ FROM base AS production
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json ./apps/api/
+COPY packages/contracts/package.json ./packages/contracts/
 RUN CI=1 pnpm install --frozen-lockfile --prod --filter @github-notifier/api...
 
+COPY --from=builder /app/packages/contracts/dist ./packages/contracts/dist
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 COPY apps/api/prisma ./apps/api/prisma
 COPY apps/api/prisma.config.ts ./apps/api/prisma.config.ts

@@ -103,7 +103,7 @@ export default fp(
       createSubscriptionService({
         githubService: fastify.githubService,
         subscriptionRepository: fastify.subscriptionRepository,
-        notifier: fastify.mailService,
+        notifier: fastify.notifier,
         log: fastify.log,
       }),
     );
@@ -111,6 +111,6 @@ export default fp(
   },
   {
     name: 'subscriptionService',
-    dependencies: ['ghRepoRepository', 'githubService', 'mailService'],
+    dependencies: ['ghRepoRepository', 'githubService', 'notifier'],
   },
 );

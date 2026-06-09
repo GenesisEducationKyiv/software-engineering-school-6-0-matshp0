@@ -10,8 +10,9 @@ import {
 import Fastify, { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import serviceApp from '@/app.ts';
+import { RoutingKey } from '@github-notifier/contracts';
 import { truncateTables } from '@test/setup/db.ts';
-import { clearMessages, getMessages } from '@test/setup/mailpit.ts';
+import { getPublishedMessages, resetQueue } from '@test/setup/rabbitmq.ts';
 
 const TEST_EMAIL = 'subscriber@test.com';
 const TEST_REPO = 'owner/test-repo';
@@ -55,7 +56,7 @@ describe('SubscriptionService (integration)', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     mockOctokitRepos(fastify);
-    await clearMessages();
+    await resetQueue();
     await truncateTables(fastify.kysely);
   });
 
@@ -73,14 +74,16 @@ describe('SubscriptionService (integration)', () => {
       expect(rows[0]).toMatchObject({ email: TEST_EMAIL, status: 'pending' });
     });
 
-    it('sends a confirmation email to Mailpit', async () => {
+    it('publishes a confirmation email event', async () => {
       await fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO);
-      await fastify.mailer.drain();
 
-      const messages = await getMessages();
+      const messages = await getPublishedMessages();
       expect(messages).toHaveLength(1);
-      expect(messages[0].To[0].Address).toBe(TEST_EMAIL);
-      expect(messages[0].Subject).toContain(TEST_REPO);
+      expect(messages[0].routingKey).toBe(RoutingKey.ConfirmationEmail);
+      expect(messages[0].payload).toMatchObject({
+        email: TEST_EMAIL,
+        repoFullName: TEST_REPO,
+      });
     });
 
     it('throws ConflictError when the same email subscribes to the same repo twice', async () => {

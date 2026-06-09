@@ -13,10 +13,7 @@ services:
       PORT: ${PORT:-3000}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      MAIL_HOST: mailpit
-      MAIL_PORT: 1025
-      MAIL_USER: ""
-      MAIL_PASS: ""
+      RABBITMQ_URL: amqp://rabbitmq:5672
       APP_URL: http://localhost:3000
       ELASTICSEARCH_URL: http://elasticsearch:9200
       ELASTICSEARCH_USER: elastic
@@ -24,8 +21,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      mailpit:
-        condition: service_started
+      rabbitmq:
+        condition: service_healthy
       elasticsearch:
         condition: service_healthy
 

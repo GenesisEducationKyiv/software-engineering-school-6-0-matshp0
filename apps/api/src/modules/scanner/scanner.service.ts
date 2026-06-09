@@ -41,13 +41,8 @@ export function createScannerService(fastify: FastifyInstance) {
     suspendedUntil = new Date(Date.now() + waitSeconds * 1000);
     return waitSeconds;
   }
-  const {
-    ghRepoRepository,
-    subscriptionRepository,
-    mailService,
-    octokit,
-    log,
-  } = fastify;
+  const { ghRepoRepository, subscriptionRepository, notifier, octokit, log } =
+    fastify;
 
   async function fetchLatestRelease(
     owner: string,
@@ -86,7 +81,7 @@ export function createScannerService(fastify: FastifyInstance) {
       await subscriptionRepository.findConfirmedByRepositoryId(repoId);
 
     const sends = subscribers.map((subscriber) =>
-      mailService
+      notifier
         .sendReleaseNotification({
           email: subscriber.email,
           repoFullName,
@@ -221,6 +216,6 @@ export default fp(
   },
   {
     name: 'scannerService',
-    dependencies: ['ghRepoRepository', 'subscriptionRepository', 'mailService'],
+    dependencies: ['ghRepoRepository', 'subscriptionRepository', 'notifier'],
   },
 );

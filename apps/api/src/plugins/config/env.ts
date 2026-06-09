@@ -10,10 +10,7 @@ declare module 'fastify' {
       POSTGRES_PASSWORD: string;
       POSTGRES_DATABASE: string;
       GITHUB_TOKEN: string;
-      MAIL_HOST: string;
-      MAIL_PORT: number;
-      MAIL_USER: string;
-      MAIL_PASS: string;
+      RABBITMQ_URL: string;
       APP_URL: string;
       SCAN_INTERVAL: number;
     };
@@ -29,10 +26,6 @@ const schema = {
     'POSTGRES_PASSWORD',
     'POSTGRES_DATABASE',
     'GITHUB_TOKEN',
-    'MAIL_HOST',
-    'MAIL_PORT',
-    'MAIL_USER',
-    'MAIL_PASS',
   ],
   properties: {
     POSTGRES_HOST: {
@@ -55,18 +48,9 @@ const schema = {
     GITHUB_TOKEN: {
       type: 'string',
     },
-    MAIL_HOST: {
+    RABBITMQ_URL: {
       type: 'string',
-    },
-    MAIL_PORT: {
-      type: 'number',
-      default: 587,
-    },
-    MAIL_USER: {
-      type: 'string',
-    },
-    MAIL_PASS: {
-      type: 'string',
+      default: 'amqp://localhost:5672',
     },
     APP_URL: {
       type: 'string',

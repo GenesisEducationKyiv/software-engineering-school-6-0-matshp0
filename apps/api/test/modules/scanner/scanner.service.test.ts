@@ -13,7 +13,7 @@ function buildMockFastify() {
     subscriptionRepository: {
       findConfirmedByRepositoryId: vi.fn().mockResolvedValue([]),
     },
-    mailService: {
+    notifier: {
       sendReleaseNotification: vi.fn().mockResolvedValue(undefined),
     },
     octokit: { request: vi.fn() },
@@ -163,16 +163,14 @@ describe('createScannerService', () => {
 
       await scanner.scan();
 
-      expect(fastify.mailService.sendReleaseNotification).toHaveBeenCalledTimes(
-        2,
-      );
-      expect(fastify.mailService.sendReleaseNotification).toHaveBeenCalledWith({
+      expect(fastify.notifier.sendReleaseNotification).toHaveBeenCalledTimes(2);
+      expect(fastify.notifier.sendReleaseNotification).toHaveBeenCalledWith({
         email: 'a@test.com',
         repoFullName: repo.fullName,
         tagName: 'v2.0.0',
         unsubToken: 'tok-a',
       });
-      expect(fastify.mailService.sendReleaseNotification).toHaveBeenCalledWith({
+      expect(fastify.notifier.sendReleaseNotification).toHaveBeenCalledWith({
         email: 'b@test.com',
         repoFullName: repo.fullName,
         tagName: 'v2.0.0',
@@ -191,15 +189,13 @@ describe('createScannerService', () => {
       fastify.subscriptionRepository.findConfirmedByRepositoryId.mockResolvedValue(
         subscribers,
       );
-      fastify.mailService.sendReleaseNotification
+      fastify.notifier.sendReleaseNotification
         .mockRejectedValueOnce(new Error('SMTP error'))
         .mockResolvedValueOnce(undefined);
 
       await scanner.scan();
 
-      expect(fastify.mailService.sendReleaseNotification).toHaveBeenCalledTimes(
-        2,
-      );
+      expect(fastify.notifier.sendReleaseNotification).toHaveBeenCalledTimes(2);
       expect(fastify.log.error).toHaveBeenCalledOnce();
     });
   });
@@ -222,9 +218,7 @@ describe('createScannerService', () => {
         repo.id,
         expect.not.objectContaining({ lastSeenTag: expect.anything() }),
       );
-      expect(
-        fastify.mailService.sendReleaseNotification,
-      ).not.toHaveBeenCalled();
+      expect(fastify.notifier.sendReleaseNotification).not.toHaveBeenCalled();
     });
 
     it('updates lastCheckedAt on a 304 Not Modified', async () => {
@@ -240,9 +234,7 @@ describe('createScannerService', () => {
         repo.id,
         expect.objectContaining({ lastCheckedAt: expect.any(Date) }),
       );
-      expect(
-        fastify.mailService.sendReleaseNotification,
-      ).not.toHaveBeenCalled();
+      expect(fastify.notifier.sendReleaseNotification).not.toHaveBeenCalled();
     });
 
     it('treats 404 (no releases) as unchanged and updates lastCheckedAt', async () => {
@@ -256,9 +248,7 @@ describe('createScannerService', () => {
         repo.id,
         expect.objectContaining({ lastCheckedAt: expect.any(Date) }),
       );
-      expect(
-        fastify.mailService.sendReleaseNotification,
-      ).not.toHaveBeenCalled();
+      expect(fastify.notifier.sendReleaseNotification).not.toHaveBeenCalled();
     });
   });
 

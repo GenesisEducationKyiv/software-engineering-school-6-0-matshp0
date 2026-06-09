@@ -7,7 +7,7 @@ const PG_PASSWORD = 'testpassword';
 const PG_DB = 'github_notifier_test';
 
 export async function setup(project: TestProject) {
-  const [pg, mailpit] = await Promise.all([
+  const [pg, rabbitmq] = await Promise.all([
     new GenericContainer('postgres:16-alpine')
       .withEnvironment({
         POSTGRES_USER: PG_USER,
@@ -19,9 +19,9 @@ export async function setup(project: TestProject) {
         Wait.forLogMessage('database system is ready to accept connections'),
       )
       .start(),
-    new GenericContainer('axllent/mailpit:latest')
-      .withExposedPorts(1025, 8025)
-      .withWaitStrategy(Wait.forListeningPorts())
+    new GenericContainer('rabbitmq:4-alpine')
+      .withExposedPorts(5672)
+      .withWaitStrategy(Wait.forLogMessage('Server startup complete'))
       .start(),
   ]);
 
@@ -35,14 +35,12 @@ export async function setup(project: TestProject) {
   project.provide('POSTGRES_USER', PG_USER);
   project.provide('POSTGRES_PASSWORD', PG_PASSWORD);
   project.provide('POSTGRES_DATABASE', PG_DB);
-  project.provide('MAIL_HOST', mailpit.getHost());
-  project.provide('MAIL_PORT', String(mailpit.getMappedPort(1025)));
   project.provide(
-    'MAILPIT_API_URL',
-    `http://${mailpit.getHost()}:${mailpit.getMappedPort(8025)}/api/v1`,
+    'RABBITMQ_URL',
+    `amqp://${rabbitmq.getHost()}:${rabbitmq.getMappedPort(5672)}`,
   );
 
   return async () => {
-    await Promise.all([pg.stop(), mailpit.stop()]);
+    await Promise.all([pg.stop(), rabbitmq.stop()]);
   };
 }

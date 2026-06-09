@@ -12,7 +12,7 @@ import fp from 'fastify-plugin';
 import request from 'supertest';
 import serviceApp from '@/app.ts';
 import { truncateTables } from '@test/setup/db.ts';
-import { clearMessages } from '@test/setup/mailpit.ts';
+import { resetQueue } from '@test/setup/rabbitmq.ts';
 
 const VALID_EMAIL = 'e2e@test.com';
 const VALID_REPO = 'owner/test-repo';
@@ -56,7 +56,7 @@ describe('Subscription API (e2e)', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    await clearMessages();
+    await resetQueue();
     await truncateTables(fastify.kysely);
     mockOctokitRepos(fastify);
   });

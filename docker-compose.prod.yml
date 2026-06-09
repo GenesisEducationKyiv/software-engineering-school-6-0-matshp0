@@ -16,14 +16,13 @@ services:
       POSTGRES_DATABASE: ${POSTGRES_DATABASE}
       GITHUB_TOKEN: ${GITHUB_TOKEN}
       SCAN_INTERVAL: ${SCAN_INTERVAL:-5}
-      MAIL_HOST: ${MAIL_HOST}
-      MAIL_PORT: ${MAIL_PORT}
-      MAIL_USER: ${MAIL_USER}
-      MAIL_PASS: ${MAIL_PASS}
+      RABBITMQ_URL: ${RABBITMQ_URL}
       APP_URL: ${APP_URL}
     depends_on:
       migrate:
         condition: service_completed_successfully
+      rabbitmq:
+        condition: service_healthy
 
   migrate:
     build:

@@ -38,15 +38,18 @@ importers:
       '@fastify/type-provider-typebox':
         specifier: ^6.1.0
         version: 6.1.0(typebox@1.2.3)
+      '@github-notifier/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@octokit/rest':
         specifier: ^22.0.1
         version: 22.0.1
-      '@types/nodemailer':
-        specifier: ^8.0.0
-        version: 8.0.0
       '@types/pg':
         specifier: ^8.20.0
         version: 8.20.0
+      amqplib:
+        specifier: ^0.10.5
+        version: 0.10.9
       fastify:
         specifier: ^5.8.4
         version: 5.8.5
@@ -59,9 +62,6 @@ importers:
       kysely:
         specifier: ^0.28.15
         version: 0.28.17
-      nodemailer:
-        specifier: ^8.0.5
-        version: 8.0.10
       pg:
         specifier: ^8.20.0
         version: 8.21.0
@@ -75,6 +75,9 @@ importers:
       '@eslint/js':
         specifier: ^9.18.0
         version: 9.39.4
+      '@types/amqplib':
+        specifier: ^0.10.5
+        version: 0.10.8
       '@types/node':
         specifier: ^22.10.7
         version: 22.19.20
