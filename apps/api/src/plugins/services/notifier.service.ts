@@ -5,9 +5,9 @@ import {
   type ConfirmationEmailEvent,
   type ReleaseEmailEvent,
 } from '@github-notifier/contracts';
-import type { Notifier } from '../../common/notifier.js';
+import type { Notifier } from '../../modules/subscription/subscription.service.js';
 import type { ILogger } from '../../common/interfaces/logger.interface.js';
-import type { Publisher } from '../infrastructure/rabbitmq.js';
+import type { Publisher } from '../infrastructure/rabbitmq/rabbitmq.js';
 
 export interface NotifierDeps {
   publisher: Publisher;
@@ -24,19 +24,17 @@ export function createNotifier(deps: NotifierDeps): Notifier {
   const { publisher, log } = deps;
 
   return {
-    sendConfirmationEmail(params) {
-      const event: ConfirmationEmailEvent = params;
+    sendConfirmationEmail(event: ConfirmationEmailEvent) {
       log.info(
-        { to: params.email, repo: params.repoFullName },
+        { to: event.email, repo: event.repoFullName },
         'Publishing confirmation email event',
       );
       return publisher.publish(RoutingKey.ConfirmationEmail, event);
     },
 
-    sendReleaseNotification(params) {
-      const event: ReleaseEmailEvent = params;
+    sendReleaseNotification(event: ReleaseEmailEvent) {
       log.info(
-        { to: params.email, repo: params.repoFullName, tag: params.tagName },
+        { to: event.email, repo: event.repoFullName, tag: event.tagName },
         'Publishing release notification event',
       );
       return publisher.publish(RoutingKey.ReleaseEmail, event);

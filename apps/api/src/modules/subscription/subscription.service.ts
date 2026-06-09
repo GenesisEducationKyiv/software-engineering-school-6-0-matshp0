@@ -5,10 +5,18 @@ import {
   ConflictError,
   NotFoundError,
 } from '../../common/errors/index.js';
-import type { Notifier } from '../../common/notifier.js';
+import type {
+  ConfirmationEmailEvent,
+  ReleaseEmailEvent,
+} from '@github-notifier/contracts';
 import type { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.js';
 import type { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
 import type { ILogger } from '../../common/interfaces/logger.interface.js';
+
+export interface Notifier {
+  sendConfirmationEmail(event: ConfirmationEmailEvent): Promise<void>;
+  sendReleaseNotification(event: ReleaseEmailEvent): Promise<void>;
+}
 
 export interface SubscriptionServiceDeps {
   githubService: IGithubService;
