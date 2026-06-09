@@ -6,16 +6,17 @@
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
+  "packageManager": "pnpm@10.33.4",
   "scripts": {
     "format": "prettier --check \"src/**/*.ts\"",
     "format:fix": "prettier --write \"src/**/*.ts\"",
     "lint": "eslint",
-    "lint:fix": "npm run lint -- --fix",
-    "start": "npm run build && node dist/server.js",
+    "lint:fix": "pnpm lint --fix",
+    "start": "pnpm build && node dist/server.js",
     "build": "tsc -p tsconfig.build.json",
     "watch": "tsc -w",
     "dev": "tsx --watch=src --env-file=.env ./src/server.ts",
-    "test": "npm run test:unit & npm run test:integration & wait",
+    "test": "pnpm test:unit & pnpm test:integration & wait",
     "test:run": "glob -c \"tsx --test\" \"./test/**/*.ts\"",
     "test:unit": "vitest run",
     "test:integration": "node_modules/.bin/vitest run --config vitest.config.integration.ts",
@@ -65,5 +66,8 @@
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0",
     "vitest": "^4.1.4"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["@prisma/engines", "esbuild", "prisma"]
   }
 }

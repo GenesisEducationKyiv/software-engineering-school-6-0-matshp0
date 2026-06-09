@@ -180,16 +180,16 @@ Database migrations run automatically via the `migrate` service on startup.
 
 ## Running locally (without Docker)
 
-Prerequisites: Node.js 22, a running PostgreSQL instance, an SMTP server (e.g. Mailpit).
+Prerequisites: Node.js 22, pnpm (via `corepack enable`), a running PostgreSQL instance, an SMTP server (e.g. Mailpit).
 
 ```bash
-npm install
+pnpm install
 
 # Run migrations
-npm run db:migrate
+pnpm db:migrate
 
 # Start with hot reload
-npm run dev
+pnpm dev
 ```
 
 ## Database migrations
@@ -198,23 +198,23 @@ Prisma is used exclusively for migrations. Runtime queries go through Kysely.
 
 ```bash
 # Create a new migration (development)
-npm run db:migrate
+pnpm db:migrate
 
 # Apply pending migrations (production / CI)
-npm run db:migrate:deploy
+pnpm db:migrate:deploy
 
 # Check migration status
-npm run db:migrate:status
+pnpm db:migrate:status
 ```
 
 ## Testing
 
 ```bash
 # Run all unit tests
-npm test
+pnpm test
 
 # Watch mode
-npx vitest
+pnpm exec vitest
 ```
 
 Tests are written with Vitest and use in-memory mocks — no database or network required.
@@ -222,9 +222,9 @@ Tests are written with Vitest and use in-memory mocks — no database or network
 ## Linting and formatting
 
 ```bash
-npm run lint        # Check
-npm run lint:fix    # Fix auto-fixable issues
-npm run format      # Prettier
+pnpm lint        # Check
+pnpm lint:fix    # Fix auto-fixable issues
+pnpm format      # Prettier
 ```
 
 ## CI

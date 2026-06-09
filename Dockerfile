@@ -1,36 +1,37 @@
-FROM node:22-alpine AS builder
+FROM node:22-alpine AS base
+
+RUN corepack enable
 
 WORKDIR /app
 
-COPY package*.json ./
-RUN CI=1 npm ci
+
+FROM base AS builder
+
+COPY package.json pnpm-lock.yaml ./
+RUN CI=1 pnpm install --frozen-lockfile
 
 COPY tsconfig.json tsconfig.build.json ./
 COPY @types ./@types
 COPY src ./src
 
-RUN npm run build
+RUN pnpm build
 
 
-FROM node:22-alpine AS migrator
+FROM base AS migrator
 
-WORKDIR /app
-
-COPY package*.json ./
-RUN CI=1 npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN CI=1 pnpm install --frozen-lockfile
 
 COPY prisma ./prisma
 COPY prisma.config.ts ./prisma.config.ts
 
-CMD ["node_modules/.bin/prisma", "migrate", "deploy"]
+CMD ["pnpm", "exec", "prisma", "migrate", "deploy"]
 
 
-FROM node:22-alpine AS production
+FROM base AS production
 
-WORKDIR /app
-
-COPY package*.json ./
-RUN CI=1 npm ci --omit=dev
+COPY package.json pnpm-lock.yaml ./
+RUN CI=1 pnpm install --frozen-lockfile --prod
 
 COPY --from=builder /app/dist ./dist
 COPY prisma ./prisma
