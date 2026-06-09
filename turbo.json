@@ -22,7 +22,8 @@
       "cache": false
     },
     "test": {
-      "cache": false
+      "cache": false,
+      "dependsOn": ["^build"]
     },
     "dev": {
       "cache": false,
