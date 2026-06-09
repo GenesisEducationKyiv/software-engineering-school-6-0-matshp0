@@ -48,7 +48,7 @@ services:
   email:
     build:
       context: .
-      dockerfile: apps/email/Dockerfile
+      dockerfile: apps/mailer/Dockerfile
       target: production
     restart: unless-stopped
     environment:

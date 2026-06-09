@@ -3,7 +3,7 @@ import {
   EMAIL_QUEUE,
   NOTIFICATIONS_EXCHANGE,
   RoutingKey,
-} from '@github-notifier/contracts';
+} from '@github-notifier/contracts/mailer';
 
 function url() {
   return process.env.RABBITMQ_URL ?? 'amqp://localhost:5672';

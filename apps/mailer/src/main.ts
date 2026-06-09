@@ -1,7 +1,7 @@
 import { loadConfig } from './config.js';
 import { createLogger } from './logger.js';
-import { createMailer, createTransport } from './mailer.js';
-import { startConsumer } from './consumer.js';
+import { createMailer, createTransport } from './mail/mailer.js';
+import { startConsumer } from './messaging/consumer.js';
 
 async function main(): Promise<void> {
   const config = loadConfig();

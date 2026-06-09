@@ -8,7 +8,7 @@ import {
 import type {
   ConfirmationEmailEvent,
   ReleaseEmailEvent,
-} from '@github-notifier/contracts';
+} from '@github-notifier/contracts/mailer';
 import type { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.js';
 import type { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
 import type { ILogger } from '../../common/interfaces/logger.interface.js';

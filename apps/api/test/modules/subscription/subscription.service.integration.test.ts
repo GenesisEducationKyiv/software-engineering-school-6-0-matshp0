@@ -10,7 +10,7 @@ import {
 import Fastify, { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import serviceApp from '@/app.ts';
-import { RoutingKey } from '@github-notifier/contracts';
+import { RoutingKey } from '@github-notifier/contracts/mailer';
 import { truncateTables } from '@test/setup/db.ts';
 import { getPublishedMessages, resetQueue } from '@test/setup/rabbitmq.ts';
 

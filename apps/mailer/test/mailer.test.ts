@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type nodemailer from 'nodemailer';
-import { createMailer } from '../src/mailer.ts';
+import { createMailer } from '../src/mail/mailer.ts';
 
 function buildMessage() {
   return {

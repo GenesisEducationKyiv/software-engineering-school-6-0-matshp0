@@ -5,7 +5,7 @@ services:
       dockerfile: apps/api/Dockerfile
       target: production
     env_file:
-      - path: .env.development
+      - path: apps/api/.env.development
         required: false
     ports:
       - "${PORT:-3000}:3000"
@@ -32,7 +32,7 @@ services:
       dockerfile: apps/api/Dockerfile
       target: migrator
     env_file:
-      - path: .env.development
+      - path: apps/api/.env.development
         required: false
     environment:
       POSTGRES_HOST: postgres
@@ -76,10 +76,10 @@ services:
   email:
     build:
       context: .
-      dockerfile: apps/email/Dockerfile
+      dockerfile: apps/mailer/Dockerfile
       target: production
     env_file:
-      - path: .env.development
+      - path: apps/api/.env.development
         required: false
     environment:
       RABBITMQ_URL: amqp://rabbitmq:5672

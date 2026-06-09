@@ -3,12 +3,10 @@ import {
   EMAIL_QUEUE,
   NOTIFICATIONS_EXCHANGE,
   RoutingKey,
-  type ConfirmationEmailEvent,
-  type ReleaseEmailEvent,
-} from '@github-notifier/contracts';
-import type { Mailer } from './mailer.js';
-import type { Logger } from './logger.js';
-import { buildConfirmationEmail, buildReleaseEmail } from './templates.js';
+} from '@github-notifier/contracts/mailer';
+import type { Mailer } from '../mail/mailer.js';
+import type { Logger } from '../logger.js';
+import { handlers } from './handlers.js';
 
 const PREFETCH = 5;
 
@@ -33,39 +31,23 @@ export async function startConsumer(deps: ConsumerDeps): Promise<Consumer> {
     durable: true,
   });
   await channel.assertQueue(EMAIL_QUEUE, { durable: true });
-  await channel.bindQueue(
-    EMAIL_QUEUE,
-    NOTIFICATIONS_EXCHANGE,
-    RoutingKey.ConfirmationEmail,
-  );
-  await channel.bindQueue(
-    EMAIL_QUEUE,
-    NOTIFICATIONS_EXCHANGE,
-    RoutingKey.ReleaseEmail,
-  );
+  for (const routingKey of Object.keys(handlers)) {
+    await channel.bindQueue(EMAIL_QUEUE, NOTIFICATIONS_EXCHANGE, routingKey);
+  }
   await channel.prefetch(PREFETCH);
 
   async function handle(message: amqp.ConsumeMessage): Promise<void> {
     const { routingKey } = message.fields;
-    const payload = JSON.parse(message.content.toString()) as unknown;
+    const handler = handlers[routingKey as RoutingKey];
 
-    if (routingKey === RoutingKey.ConfirmationEmail) {
-      const event = payload as ConfirmationEmailEvent;
-      await mailer.sendMail(buildConfirmationEmail(event, appUrl));
-      log.info(
-        { to: event.email, repo: event.repoFullName },
-        'Sent confirmation email',
-      );
-    } else if (routingKey === RoutingKey.ReleaseEmail) {
-      const event = payload as ReleaseEmailEvent;
-      await mailer.sendMail(buildReleaseEmail(event, appUrl));
-      log.info(
-        { to: event.email, repo: event.repoFullName, tag: event.tagName },
-        'Sent release notification email',
-      );
-    } else {
+    if (!handler) {
       log.warn({ routingKey }, 'Unknown routing key, discarding message');
+      return;
     }
+
+    const payload = JSON.parse(message.content.toString()) as unknown;
+    const event = handler.schema.parse(payload);
+    await handler.handle(event, { mailer, appUrl, log });
   }
 
   await channel.consume(EMAIL_QUEUE, (message) => {

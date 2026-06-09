@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { buildConfirmationEmail, buildReleaseEmail } from '../src/templates.ts';
+import {
+  buildConfirmationEmail,
+  buildReleaseEmail,
+} from '../src/mail/templates.ts';
 
 const APP_URL = 'https://notifier.test';
 

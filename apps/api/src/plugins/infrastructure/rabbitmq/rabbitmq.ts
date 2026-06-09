@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import * as amqp from 'amqplib';
-import { NOTIFICATIONS_EXCHANGE } from '@github-notifier/contracts';
+import { NOTIFICATIONS_EXCHANGE } from '@github-notifier/contracts/mailer';
 
 export interface Publisher {
   publish(routingKey: string, payload: unknown): Promise<void>;

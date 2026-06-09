@@ -1,5 +1,5 @@
 {
-  "name": "@github-notifier/email",
+  "name": "@github-notifier/mailer",
   "version": "0.0.1",
   "description": "Email delivery microservice",
   "private": true,
@@ -20,7 +20,8 @@
     "@github-notifier/contracts": "workspace:*",
     "amqplib": "^0.10.5",
     "nodemailer": "^8.0.5",
-    "pino": "^9.5.0"
+    "pino": "^9.5.0",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.18.0",
