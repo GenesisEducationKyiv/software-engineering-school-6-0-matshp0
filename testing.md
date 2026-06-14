@@ -3,7 +3,7 @@
 ## Підготовка
 
 ```bash
-npm install
+pnpm install
 ```
 
 ## Юніт-тести
@@ -11,7 +11,7 @@ npm install
 Не потребують Docker або зовнішніх сервісів.
 
 ```bash
-npm run test:unit
+pnpm test:unit
 ```
 
 ## Інтеграційні тести
@@ -19,5 +19,5 @@ npm run test:unit
 Потрібен Docker. Testcontainers автоматично піднімає PostgreSQL і Mailpit, запускає міграції, виконує тести і зупиняє контейнери.
 
 ```bash
-npm run test:integration
+pnpm test:integration
 ```

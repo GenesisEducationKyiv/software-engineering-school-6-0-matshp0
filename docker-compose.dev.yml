@@ -2,9 +2,10 @@ services:
   app:
     build:
       context: .
+      dockerfile: apps/api/Dockerfile
       target: production
     env_file:
-      - path: .env.development
+      - path: apps/api/.env.development
         required: false
     ports:
       - "${PORT:-3000}:3000"
@@ -12,10 +13,7 @@ services:
       PORT: ${PORT:-3000}
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      MAIL_HOST: mailpit
-      MAIL_PORT: 1025
-      MAIL_USER: ""
-      MAIL_PASS: ""
+      RABBITMQ_URL: amqp://rabbitmq:5672
       APP_URL: http://localhost:3000
       ELASTICSEARCH_URL: http://elasticsearch:9200
       ELASTICSEARCH_USER: elastic
@@ -23,17 +21,18 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      mailpit:
-        condition: service_started
+      rabbitmq:
+        condition: service_healthy
       elasticsearch:
         condition: service_healthy
 
   migrate:
     build:
       context: .
+      dockerfile: apps/api/Dockerfile
       target: migrator
     env_file:
-      - path: .env.development
+      - path: apps/api/.env.development
         required: false
     environment:
       POSTGRES_HOST: postgres
@@ -62,6 +61,39 @@ services:
     ports:
       - "1025:1025"
       - "8025:8025"
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  email:
+    build:
+      context: .
+      dockerfile: apps/mailer/Dockerfile
+      target: production
+    env_file:
+      - path: apps/api/.env.development
+        required: false
+    environment:
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      MAIL_USER: ""
+      MAIL_PASS: ""
+      APP_URL: http://localhost:3000
+      LOG_LEVEL: info
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
 
   prometheus:
     image: prom/prometheus:latest
