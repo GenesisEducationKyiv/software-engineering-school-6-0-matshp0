@@ -1,8 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createScannerService } from '@/modules/scanner/scanner.service.ts';
+import { RoutingKey } from '@github-notifier/contracts/mailer';
 import type { FastifyInstance } from 'fastify';
 import type { Selectable } from 'kysely';
 import type { Repositories } from '@/plugins/infrastructure/database/types.ts';
+
+const mockTrx = {} as ReturnType<typeof buildMockFastify>['kysely'];
 
 function buildMockFastify() {
   return {
@@ -13,8 +16,15 @@ function buildMockFastify() {
     subscriptionRepository: {
       findConfirmedByRepositoryId: vi.fn().mockResolvedValue([]),
     },
-    notifier: {
-      sendReleaseNotification: vi.fn().mockResolvedValue(undefined),
+    outboxRepository: {
+      insertMany: vi.fn().mockResolvedValue(undefined),
+    },
+    kysely: {
+      transaction: vi.fn().mockReturnValue({
+        execute: vi
+          .fn()
+          .mockImplementation((cb: (trx: unknown) => unknown) => cb(mockTrx)),
+      }),
     },
     octokit: { request: vi.fn() },
     log: {
@@ -142,10 +152,11 @@ describe('createScannerService', () => {
       expect(fastify.ghRepoRepository.updateById).toHaveBeenCalledWith(
         repo.id,
         expect.objectContaining({ lastSeenTag: 'v2.0.0', etag: '"etag-new"' }),
+        mockTrx,
       );
     });
 
-    it('notifies all confirmed subscribers', async () => {
+    it('inserts outbox events for all confirmed subscribers', async () => {
       const repo = buildRepo({ lastSeenTag: 'v1.0.0' });
       const subscribers = [
         buildSubscriber({ email: 'a@test.com', unsubToken: 'tok-a' }),
@@ -163,40 +174,38 @@ describe('createScannerService', () => {
 
       await scanner.scan();
 
-      expect(fastify.notifier.sendReleaseNotification).toHaveBeenCalledTimes(2);
-      expect(fastify.notifier.sendReleaseNotification).toHaveBeenCalledWith({
-        email: 'a@test.com',
-        repoFullName: repo.fullName,
-        tagName: 'v2.0.0',
-        unsubToken: 'tok-a',
-      });
-      expect(fastify.notifier.sendReleaseNotification).toHaveBeenCalledWith({
-        email: 'b@test.com',
-        repoFullName: repo.fullName,
-        tagName: 'v2.0.0',
-        unsubToken: 'tok-b',
-      });
+      expect(fastify.outboxRepository.insertMany).toHaveBeenCalledWith(
+        expect.arrayContaining([
+          expect.objectContaining({
+            routingKey: RoutingKey.ReleaseEmail,
+            payload: expect.objectContaining({
+              email: 'a@test.com',
+              unsubToken: 'tok-a',
+            }),
+          }),
+          expect.objectContaining({
+            routingKey: RoutingKey.ReleaseEmail,
+            payload: expect.objectContaining({
+              email: 'b@test.com',
+              unsubToken: 'tok-b',
+            }),
+          }),
+        ]),
+        mockTrx,
+      );
     });
 
-    it('continues notifying remaining subscribers if one email fails', async () => {
+    it('skips outbox insert when there are no confirmed subscribers', async () => {
       const repo = buildRepo({ lastSeenTag: 'v1.0.0' });
-      const subscribers = [
-        buildSubscriber({ email: 'a@test.com' }),
-        buildSubscriber({ id: 'sub-2', email: 'b@test.com' }),
-      ];
       fastify.ghRepoRepository.findAll.mockResolvedValue([repo]);
       fastify.octokit.request.mockResolvedValue(buildReleaseResponse('v2.0.0'));
       fastify.subscriptionRepository.findConfirmedByRepositoryId.mockResolvedValue(
-        subscribers,
+        [],
       );
-      fastify.notifier.sendReleaseNotification
-        .mockRejectedValueOnce(new Error('SMTP error'))
-        .mockResolvedValueOnce(undefined);
 
       await scanner.scan();
 
-      expect(fastify.notifier.sendReleaseNotification).toHaveBeenCalledTimes(2);
-      expect(fastify.log.error).toHaveBeenCalledOnce();
+      expect(fastify.outboxRepository.insertMany).not.toHaveBeenCalled();
     });
   });
 
@@ -218,7 +227,7 @@ describe('createScannerService', () => {
         repo.id,
         expect.not.objectContaining({ lastSeenTag: expect.anything() }),
       );
-      expect(fastify.notifier.sendReleaseNotification).not.toHaveBeenCalled();
+      expect(fastify.outboxRepository.insertMany).not.toHaveBeenCalled();
     });
 
     it('updates lastCheckedAt on a 304 Not Modified', async () => {
@@ -234,7 +243,7 @@ describe('createScannerService', () => {
         repo.id,
         expect.objectContaining({ lastCheckedAt: expect.any(Date) }),
       );
-      expect(fastify.notifier.sendReleaseNotification).not.toHaveBeenCalled();
+      expect(fastify.outboxRepository.insertMany).not.toHaveBeenCalled();
     });
 
     it('treats 404 (no releases) as unchanged and updates lastCheckedAt', async () => {
@@ -248,7 +257,7 @@ describe('createScannerService', () => {
         repo.id,
         expect.objectContaining({ lastCheckedAt: expect.any(Date) }),
       );
-      expect(fastify.notifier.sendReleaseNotification).not.toHaveBeenCalled();
+      expect(fastify.outboxRepository.insertMany).not.toHaveBeenCalled();
     });
   });
 

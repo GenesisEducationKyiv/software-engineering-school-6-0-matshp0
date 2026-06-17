@@ -7,6 +7,8 @@ export type Generated<T> =
 
 export type SubscriptionStatus = 'confirmed' | 'pending' | 'unsubscribed';
 
+export type OutboxEventStatus = 'pending' | 'processed' | 'failed';
+
 export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export interface Repositories {
@@ -26,7 +28,18 @@ export interface Subscriptions {
   unsubToken: Generated<string>;
 }
 
+export interface NotificationOutbox {
+  id: Generated<string>;
+  routingKey: string;
+  payload: unknown;
+  status: Generated<OutboxEventStatus>;
+  retryCount: Generated<number>;
+  createdAt: Generated<Timestamp>;
+  processedAt: Timestamp | null;
+}
+
 export interface DB {
   repositories: Repositories;
   subscriptions: Subscriptions;
+  notificationOutbox: NotificationOutbox;
 }

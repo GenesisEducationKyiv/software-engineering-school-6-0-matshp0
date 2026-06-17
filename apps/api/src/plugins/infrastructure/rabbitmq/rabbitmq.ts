@@ -25,21 +25,21 @@ export default fp(
     const publisher: Publisher = {
       publish(routingKey, payload) {
         const body = Buffer.from(JSON.stringify(payload));
-        return new Promise<void>((resolve, reject) => {
-          channel.publish(
-            NOTIFICATIONS_EXCHANGE,
-            routingKey,
-            body,
-            { persistent: true, contentType: 'application/json' },
-            (err) => {
-              if (err) {
-                reject(err instanceof Error ? err : new Error(String(err)));
-              } else {
-                resolve();
-              }
-            },
-          );
-        });
+        const { promise, resolve, reject } = Promise.withResolvers<void>();
+        channel.publish(
+          NOTIFICATIONS_EXCHANGE,
+          routingKey,
+          body,
+          { persistent: true, contentType: 'application/json' },
+          (err) => {
+            if (err) {
+              reject(err instanceof Error ? err : new Error(String(err)));
+            } else {
+              resolve();
+            }
+          },
+        );
+        return promise;
       },
     };
 

@@ -93,8 +93,8 @@ export class SubscriptionRepository {
     return result ?? null;
   }
 
-  findConfirmedByRepositoryId(repositoryId: string) {
-    return this.db
+  findConfirmedByRepositoryId(repositoryId: string, db: Kysely<DB> = this.db) {
+    return db
       .selectFrom('subscriptions')
       .selectAll()
       .where('repositoryId', '=', repositoryId)
