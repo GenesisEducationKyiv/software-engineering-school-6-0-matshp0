@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import type { Selectable } from 'kysely';
+import { RoutingKey } from '@github-notifier/contracts/mailer';
 import type { Repositories } from '../../plugins/infrastructure/database/types.js';
 import { isGitHubApiError } from '../../common/errors/index.js';
 
@@ -41,8 +42,14 @@ export function createScannerService(fastify: FastifyInstance) {
     suspendedUntil = new Date(Date.now() + waitSeconds * 1000);
     return waitSeconds;
   }
-  const { ghRepoRepository, subscriptionRepository, notifier, octokit, log } =
-    fastify;
+  const {
+    ghRepoRepository,
+    subscriptionRepository,
+    outboxRepository,
+    kysely,
+    octokit,
+    log,
+  } = fastify;
 
   async function fetchLatestRelease(
     owner: string,
@@ -72,32 +79,6 @@ export function createScannerService(fastify: FastifyInstance) {
     }
   }
 
-  async function notifySubscribers(
-    repoId: string,
-    repoFullName: string,
-    newTag: string,
-  ) {
-    const subscribers =
-      await subscriptionRepository.findConfirmedByRepositoryId(repoId);
-
-    const sends = subscribers.map((subscriber) =>
-      notifier
-        .sendReleaseNotification({
-          email: subscriber.email,
-          repoFullName,
-          tagName: newTag,
-          unsubToken: subscriber.unsubToken,
-        })
-        .catch((err: unknown) => {
-          log.error(
-            { err, email: subscriber.email, repo: repoFullName },
-            'Scanner: failed to send release notification',
-          );
-        }),
-    );
-    await Promise.all(sends);
-  }
-
   async function handleNewRelease(
     repo: Selectable<Repositories>,
     newTag: string,
@@ -107,12 +88,31 @@ export function createScannerService(fastify: FastifyInstance) {
       { repo: repo.fullName, oldTag: repo.lastSeenTag, newTag },
       'Scanner: new release detected',
     );
-    await ghRepoRepository.updateById(repo.id, {
-      lastSeenTag: newTag,
-      etag: newEtag,
-      lastCheckedAt: new Date(),
+    await kysely.transaction().execute(async (trx) => {
+      await ghRepoRepository.updateById(
+        repo.id,
+        { lastSeenTag: newTag, etag: newEtag, lastCheckedAt: new Date() },
+        trx,
+      );
+
+      const subscribers =
+        await subscriptionRepository.findConfirmedByRepositoryId(repo.id, trx);
+
+      if (subscribers.length === 0) return;
+
+      await outboxRepository.insertMany(
+        subscribers.map((sub) => ({
+          routingKey: RoutingKey.ReleaseEmail,
+          payload: {
+            email: sub.email,
+            repoFullName: repo.fullName,
+            tagName: newTag,
+            unsubToken: sub.unsubToken,
+          },
+        })),
+        trx,
+      );
     });
-    await notifySubscribers(repo.id, repo.fullName, newTag);
   }
 
   async function handleUnchanged(
@@ -216,6 +216,10 @@ export default fp(
   },
   {
     name: 'scannerService',
-    dependencies: ['ghRepoRepository', 'subscriptionRepository', 'notifier'],
+    dependencies: [
+      'ghRepoRepository',
+      'subscriptionRepository',
+      'outboxRepository',
+    ],
   },
 );

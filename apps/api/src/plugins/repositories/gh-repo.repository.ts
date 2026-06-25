@@ -56,8 +56,12 @@ export class GhRepoRepository {
     return query.execute();
   }
 
-  updateById(id: string, data: Updateable<Repositories>) {
-    return this.db
+  updateById(
+    id: string,
+    data: Updateable<Repositories>,
+    db: Kysely<DB> = this.db,
+  ) {
+    return db
       .updateTable('repositories')
       .set(data)
       .where('id', '=', id)
