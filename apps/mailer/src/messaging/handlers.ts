@@ -3,7 +3,7 @@ import {
   RoutingKey,
   confirmationEmailEventSchema,
   releaseEmailEventSchema,
-} from '@github-notifier/contracts/mailer';
+} from '@github-notifier/contracts/mailer/messaging';
 import type { Mailer } from '../mail/mailer.js';
 import type { Logger } from '../logger.js';
 import {

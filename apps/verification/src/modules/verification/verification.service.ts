@@ -1,11 +1,11 @@
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
-import { RoutingKey } from '@github-notifier/contracts/mailer';
+import { RoutingKey } from '@github-notifier/contracts/mailer/messaging';
 import type {
   CancelVerificationRequest,
   CreateVerificationRequest,
   CreateVerificationResponse,
-} from '@github-notifier/contracts/verification';
+} from '@github-notifier/contracts/verification/http';
 import type { VerificationRepository } from '../../plugins/repositories/verification.repository.js';
 import type { Publisher } from '../../plugins/infrastructure/rabbitmq/rabbitmq.js';
 import type { ILogger } from '../../common/interfaces/logger.interface.js';

@@ -17,6 +17,8 @@ services:
       RABBITMQ_URL: amqp://rabbitmq:5672
       APP_URL: http://localhost:3000
       MAIL_VERIFICATION_URL: http://verification:3002
+      MAIL_VERIFICATION_GRPC_ADDR: verification:50051
+      VERIFICATION_TRANSPORT: grpc
       ELASTICSEARCH_URL: http://elasticsearch:9200
       ELASTICSEARCH_USER: elastic
       ELASTICSEARCH_PASS: changeme
@@ -119,12 +121,14 @@ services:
       POSTGRES_PASSWORD: mypassword
       POSTGRES_DATABASE: mail_verification
       RABBITMQ_URL: amqp://rabbitmq:5672
+      GRPC_PORT: 50051
       LOG_LEVEL: info
       ELASTICSEARCH_URL: http://elasticsearch:9200
       ELASTICSEARCH_USER: elastic
       ELASTICSEARCH_PASS: changeme
     ports:
       - "3002:3002"
+      - "50051:50051"
     depends_on:
       postgres:
         condition: service_healthy

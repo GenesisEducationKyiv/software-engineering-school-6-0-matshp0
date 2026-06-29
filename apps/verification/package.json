@@ -27,6 +27,7 @@
     "@fastify/type-provider-json-schema-to-ts": "^5.0.0",
     "@fastify/type-provider-typebox": "^6.1.0",
     "@github-notifier/contracts": "workspace:*",
+    "@grpc/grpc-js": "^1.12.5",
     "amqplib": "^0.10.5",
     "fastify": "^5.8.4",
     "fastify-plugin": "^5.1.0",

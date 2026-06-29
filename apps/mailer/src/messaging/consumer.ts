@@ -3,7 +3,7 @@ import {
   EMAIL_QUEUE,
   NOTIFICATIONS_EXCHANGE,
   RoutingKey,
-} from '@github-notifier/contracts/mailer';
+} from '@github-notifier/contracts/mailer/messaging';
 import type { Mailer } from '../mail/mailer.js';
 import type { Logger } from '../logger.js';
 import { handlers } from './handlers.js';

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+package verification.v1;
+
+service MailVerificationService {
+  rpc CreateVerification(CreateVerificationRequest)
+      returns (CreateVerificationResponse);
+
+  rpc CancelVerification(CancelVerificationRequest)
+      returns (CancelVerificationResponse);
+}
+
+message CreateVerificationRequest {
+  string email = 1;
+  string repo_full_name = 2;
+  string unsub_token = 3;
+}
+
+message CreateVerificationResponse {
+  string token = 1;
+}
+
+message CancelVerificationRequest {
+  string token = 1;
+}
+
+message CancelVerificationResponse {}

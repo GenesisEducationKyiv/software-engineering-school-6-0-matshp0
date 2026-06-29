@@ -14,6 +14,8 @@ declare module 'fastify' {
       APP_URL: string;
       SCAN_INTERVAL: number;
       MAIL_VERIFICATION_URL: string;
+      MAIL_VERIFICATION_GRPC_ADDR: string;
+      VERIFICATION_TRANSPORT: string;
     };
   }
 }
@@ -64,6 +66,14 @@ const schema = {
     MAIL_VERIFICATION_URL: {
       type: 'string',
       default: 'http://localhost:3002',
+    },
+    MAIL_VERIFICATION_GRPC_ADDR: {
+      type: 'string',
+      default: 'localhost:50051',
+    },
+    VERIFICATION_TRANSPORT: {
+      type: 'string',
+      default: 'grpc',
     },
   },
 };
