@@ -205,9 +205,6 @@ importers:
       '@fastify/env':
         specifier: ^6.0.0
         version: 6.0.0
-      '@fastify/formbody':
-        specifier: ^8.0.2
-        version: 8.0.2
       '@fastify/helmet':
         specifier: ^13.0.2
         version: 13.0.2
@@ -229,9 +226,6 @@ importers:
       fastify:
         specifier: ^5.8.4
         version: 5.8.5
-      fastify-metrics:
-        specifier: ^13.2.0
-        version: 13.2.0(fastify@5.8.5)
       fastify-plugin:
         specifier: ^5.1.0
         version: 5.1.0
