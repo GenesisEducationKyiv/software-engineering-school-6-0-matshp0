@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package verification.v1;
+
+// Mail verification service — gRPC counterpart of the REST
+// POST /internal/verifications and /internal/verifications/cancel endpoints.
+service MailVerificationService {
+  // Create a verification record and trigger the confirmation email.
+  rpc CreateVerification(CreateVerificationRequest)
+      returns (CreateVerificationResponse);
+
+  // Compensation: cancel a previously created verification.
+  rpc CancelVerification(CancelVerificationRequest)
+      returns (CancelVerificationResponse);
+}
+
+message CreateVerificationRequest {
+  string email = 1;
+  string repo_full_name = 2;
+  string unsub_token = 3;
+}
+
+message CreateVerificationResponse {
+  string token = 1;
+}
+
+message CancelVerificationRequest {
+  string token = 1;
+}
+
+message CancelVerificationResponse {}

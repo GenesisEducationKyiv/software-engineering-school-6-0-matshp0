@@ -18,6 +18,10 @@
     "./verification": {
       "types": "./dist/verification/index.d.ts",
       "default": "./dist/verification/index.js"
+    },
+    "./grpc": {
+      "types": "./dist/grpc.d.ts",
+      "default": "./dist/grpc.js"
     }
   },
   "files": [
@@ -25,14 +29,20 @@
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "proto:lint": "buf lint",
+    "proto:generate": "buf generate",
     "format": "prettier --check \"src/**/*.ts\"",
     "format:fix": "prettier --write \"src/**/*.ts\""
   },
   "devDependencies": {
+    "@bufbuild/buf": "^1.47.2",
     "prettier": "^3.4.2",
+    "ts-proto": "^2.6.1",
     "typescript": "^5.7.3"
   },
   "dependencies": {
+    "@bufbuild/protobuf": "^2.2.3",
+    "@grpc/grpc-js": "^1.12.5",
     "zod": "^4.4.3"
   }
 }

@@ -47,5 +47,6 @@ COPY --from=builder /app/apps/verification/dist ./apps/verification/dist
 WORKDIR /app/apps/verification
 
 EXPOSE 3002
+EXPOSE 50051
 
 CMD ["node", "dist/server.js"]
