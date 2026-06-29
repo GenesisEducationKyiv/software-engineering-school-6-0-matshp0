@@ -12,6 +12,7 @@ import type {
 import type { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.js';
 import type { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
 import type { ILogger } from '../../common/interfaces/logger.interface.js';
+import type { VerificationClient } from '../../plugins/services/verification-client.js';
 
 export interface Notifier {
   sendConfirmationEmail(event: ConfirmationEmailEvent): Promise<void>;
@@ -21,7 +22,7 @@ export interface Notifier {
 export interface SubscriptionServiceDeps {
   githubService: IGithubService;
   subscriptionRepository: ISubscriptionRepository;
-  notifier: Notifier;
+  verificationClient: VerificationClient;
   log: ILogger;
 }
 
@@ -32,12 +33,41 @@ declare module 'fastify' {
 }
 
 export function createSubscriptionService(deps: SubscriptionServiceDeps) {
-  const { githubService, subscriptionRepository, notifier, log } = deps;
+  const { githubService, subscriptionRepository, verificationClient, log } =
+    deps;
+
+  // Saga compensations — best-effort, must never mask the original failure.
+  async function compensateSubscription(subscriptionId: string) {
+    try {
+      await subscriptionRepository.delete(subscriptionId);
+    } catch (err) {
+      log.error(
+        { err, subscriptionId },
+        'Saga compensation failed: could not delete subscription',
+      );
+    }
+  }
+
+  async function compensateVerification(token: string) {
+    try {
+      await verificationClient.cancelVerification({ token });
+    } catch (err) {
+      log.error(
+        { err },
+        'Saga compensation failed: could not cancel verification',
+      );
+    }
+  }
 
   return {
+    // Orchestrated saga (api is the orchestrator):
+    //   T1 (local)  create subscription
+    //   T2 (remote) request verification  -> compensate: delete subscription
+    //   T3 (local)  persist token + state -> compensate: cancel verification + delete subscription
     async subscribe(email: string, repoFullName: string) {
-      log.info({ email, repo: repoFullName }, 'Creating subscription');
+      log.info({ email, repo: repoFullName }, 'Subscribe saga: starting');
       const ghRepo = await githubService.ensureRepoExists(repoFullName);
+
       let subscription;
       try {
         subscription = await subscriptionRepository.create({
@@ -52,16 +82,43 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
         }
         throw error;
       }
+
+      let token: string;
+      try {
+        const result = await verificationClient.createVerification({
+          email,
+          repoFullName,
+          unsubToken: subscription.unsubToken,
+        });
+        token = result.token;
+      } catch (error) {
+        log.error(
+          { err: error, subscriptionId: subscription.id },
+          'Subscribe saga: verification request failed, compensating',
+        );
+        await compensateSubscription(subscription.id);
+        throw error;
+      }
+
+      try {
+        await subscriptionRepository.updateById(subscription.id, {
+          confirmToken: token,
+          status: 'awaiting_confirmation',
+        });
+      } catch (error) {
+        log.error(
+          { err: error, subscriptionId: subscription.id },
+          'Subscribe saga: persisting verification failed, compensating',
+        );
+        await compensateVerification(token);
+        await compensateSubscription(subscription.id);
+        throw error;
+      }
+
       log.info(
         { subscriptionId: subscription.id, email, repo: repoFullName },
-        'Subscription created, sending confirmation email',
+        'Subscribe saga: completed',
       );
-      await notifier.sendConfirmationEmail({
-        email,
-        repoFullName,
-        confirmToken: subscription.confirmToken,
-        unsubToken: subscription.unsubToken,
-      });
     },
 
     async confirmSubscription(token: string) {
@@ -111,7 +168,7 @@ export default fp(
       createSubscriptionService({
         githubService: fastify.githubService,
         subscriptionRepository: fastify.subscriptionRepository,
-        notifier: fastify.notifier,
+        verificationClient: fastify.verificationClient,
         log: fastify.log,
       }),
     );
@@ -119,6 +176,6 @@ export default fp(
   },
   {
     name: 'subscriptionService',
-    dependencies: ['ghRepoRepository', 'githubService', 'notifier'],
+    dependencies: ['ghRepoRepository', 'githubService', 'verificationClient'],
   },
 );

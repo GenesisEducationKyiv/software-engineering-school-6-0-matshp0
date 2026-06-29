@@ -3,7 +3,13 @@ export interface ISubscriptionRepository {
     email: string;
     repositoryId: string;
   }): Promise<{ id: string; confirmToken: string; unsubToken: string }>;
-  updateById(id: string, data: { status: 'confirmed' }): Promise<unknown>;
+  updateById(
+    id: string,
+    data: {
+      status?: 'confirmed' | 'awaiting_confirmation';
+      confirmToken?: string;
+    },
+  ): Promise<unknown>;
   findByConfirmToken(
     token: string,
   ): Promise<{ id: string; email: string } | null>;

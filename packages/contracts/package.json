@@ -14,6 +14,10 @@
     "./mailer": {
       "types": "./dist/mailer/index.d.ts",
       "default": "./dist/mailer/index.js"
+    },
+    "./verification": {
+      "types": "./dist/verification/index.d.ts",
+      "default": "./dist/verification/index.js"
     }
   },
   "files": [
