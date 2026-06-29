@@ -1,5 +1,6 @@
 services:
   app:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: apps/api/Dockerfile
@@ -15,6 +16,7 @@ services:
       POSTGRES_PORT: 5432
       RABBITMQ_URL: amqp://rabbitmq:5672
       APP_URL: http://localhost:3000
+      MAIL_VERIFICATION_URL: http://verification:3002
       ELASTICSEARCH_URL: http://elasticsearch:9200
       ELASTICSEARCH_USER: elastic
       ELASTICSEARCH_PASS: changeme
@@ -25,6 +27,8 @@ services:
         condition: service_healthy
       elasticsearch:
         condition: service_healthy
+      verification:
+        condition: service_started
 
   migrate:
     build:
@@ -48,6 +52,7 @@ services:
       POSTGRES_DB: github_notifier
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
     healthcheck:
@@ -74,6 +79,7 @@ services:
       retries: 5
 
   email:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: apps/mailer/Dockerfile
@@ -94,6 +100,50 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_started
+
+  verification:
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: apps/verification/Dockerfile
+      target: production
+    env_file:
+      - path: apps/verification/.env.development
+        required: false
+    environment:
+      PORT: 3002
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DATABASE: mail_verification
+      RABBITMQ_URL: amqp://rabbitmq:5672
+      LOG_LEVEL: info
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+      ELASTICSEARCH_USER: elastic
+      ELASTICSEARCH_PASS: changeme
+    ports:
+      - "3002:3002"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      verification-migrate:
+        condition: service_completed_successfully
+
+  verification-migrate:
+    build:
+      context: .
+      dockerfile: apps/verification/Dockerfile
+      target: migrator
+    environment:
+      DATABASE_URL: postgresql://myuser:mypassword@postgres:5432/mail_verification
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   prometheus:
     image: prom/prometheus:latest

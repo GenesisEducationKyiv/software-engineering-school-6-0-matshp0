@@ -10,13 +10,12 @@ import {
 import Fastify, { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import serviceApp from '@/app.ts';
-import { RoutingKey } from '@github-notifier/contracts/mailer';
 import { truncateTables } from '@test/setup/db.ts';
-import { getPublishedMessages, resetQueue } from '@test/setup/rabbitmq.ts';
 
 const TEST_EMAIL = 'subscriber@test.com';
 const TEST_REPO = 'owner/test-repo';
 const FAKE_UUID = '00000000-0000-0000-0000-000000000000';
+const STUB_TOKEN = '11111111-1111-1111-1111-111111111111';
 
 async function buildApp(): Promise<FastifyInstance> {
   const fastify = Fastify({ logger: false });
@@ -42,6 +41,14 @@ function mockOctokitRepos(
   });
 }
 
+// The verification service is a separate microservice; stub the client so the
+// subscribe saga step does not make a real HTTP call during api integration tests.
+function mockVerificationClient(fastify: FastifyInstance) {
+  Object.assign(fastify.verificationClient, {
+    createVerification: vi.fn().mockResolvedValue({ token: STUB_TOKEN }),
+  });
+}
+
 describe('SubscriptionService (integration)', () => {
   let fastify: FastifyInstance;
 
@@ -56,7 +63,7 @@ describe('SubscriptionService (integration)', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
     mockOctokitRepos(fastify);
-    await resetQueue();
+    mockVerificationClient(fastify);
     await truncateTables(fastify.kysely);
   });
 
@@ -74,16 +81,22 @@ describe('SubscriptionService (integration)', () => {
       expect(rows[0]).toMatchObject({ email: TEST_EMAIL, status: 'pending' });
     });
 
-    it('publishes a confirmation email event', async () => {
+    it('requests verification and stores the returned token', async () => {
       await fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO);
 
-      const messages = await getPublishedMessages();
-      expect(messages).toHaveLength(1);
-      expect(messages[0].routingKey).toBe(RoutingKey.ConfirmationEmail);
-      expect(messages[0].payload).toMatchObject({
+      expect(
+        vi.mocked(fastify.verificationClient.createVerification),
+      ).toHaveBeenCalledWith({
         email: TEST_EMAIL,
         repoFullName: TEST_REPO,
+        unsubToken: expect.any(String),
       });
+
+      const sub = await fastify.kysely
+        .selectFrom('subscriptions')
+        .selectAll()
+        .executeTakeFirstOrThrow();
+      expect(sub.confirmToken).toBe(STUB_TOKEN);
     });
 
     it('throws ConflictError when the same email subscribes to the same repo twice', async () => {

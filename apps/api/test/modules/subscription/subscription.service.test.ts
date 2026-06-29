@@ -19,9 +19,8 @@ function buildMockDeps() {
       findAllByEmail: vi.fn(),
       delete: vi.fn(),
     },
-    notifier: {
-      sendConfirmationEmail: vi.fn().mockResolvedValue(undefined),
-      sendReleaseNotification: vi.fn().mockResolvedValue(undefined),
+    verificationClient: {
+      createVerification: vi.fn().mockResolvedValue({ token: 'verif-tok' }),
     },
     log: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
@@ -56,7 +55,7 @@ describe('createSubscriptionService', () => {
   });
 
   describe('subscribe()', () => {
-    it('ensures the repo exists, creates a subscription and sends confirmation email', async () => {
+    it('ensures the repo exists, creates a subscription, requests verification and stores the returned token', async () => {
       const repo = buildRepo();
       const subscription = buildSubscription();
       deps.githubService.ensureRepoExists.mockResolvedValue(repo);
@@ -71,12 +70,15 @@ describe('createSubscriptionService', () => {
         email: 'user@test.com',
         repositoryId: repo.id,
       });
-      expect(deps.notifier.sendConfirmationEmail).toHaveBeenCalledWith({
+      expect(deps.verificationClient.createVerification).toHaveBeenCalledWith({
         email: 'user@test.com',
         repoFullName: 'owner/repo',
-        confirmToken: subscription.confirmToken,
         unsubToken: subscription.unsubToken,
       });
+      expect(deps.subscriptionRepository.updateById).toHaveBeenCalledWith(
+        subscription.id,
+        { confirmToken: 'verif-tok' },
+      );
     });
 
     it('throws ConflictError when email is already subscribed to the repository', async () => {
@@ -88,7 +90,7 @@ describe('createSubscriptionService', () => {
       await expect(
         service.subscribe('user@test.com', 'owner/repo'),
       ).rejects.toBeInstanceOf(ConflictError);
-      expect(deps.notifier.sendConfirmationEmail).not.toHaveBeenCalled();
+      expect(deps.verificationClient.createVerification).not.toHaveBeenCalled();
     });
   });
 

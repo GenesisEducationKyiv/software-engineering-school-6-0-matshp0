@@ -12,6 +12,7 @@ import type {
 import type { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.js';
 import type { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
 import type { ILogger } from '../../common/interfaces/logger.interface.js';
+import type { VerificationClient } from '../../plugins/services/verification-client.js';
 
 export interface Notifier {
   sendConfirmationEmail(event: ConfirmationEmailEvent): Promise<void>;
@@ -21,7 +22,7 @@ export interface Notifier {
 export interface SubscriptionServiceDeps {
   githubService: IGithubService;
   subscriptionRepository: ISubscriptionRepository;
-  notifier: Notifier;
+  verificationClient: VerificationClient;
   log: ILogger;
 }
 
@@ -32,7 +33,8 @@ declare module 'fastify' {
 }
 
 export function createSubscriptionService(deps: SubscriptionServiceDeps) {
-  const { githubService, subscriptionRepository, notifier, log } = deps;
+  const { githubService, subscriptionRepository, verificationClient, log } =
+    deps;
 
   return {
     async subscribe(email: string, repoFullName: string) {
@@ -54,13 +56,15 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
       }
       log.info(
         { subscriptionId: subscription.id, email, repo: repoFullName },
-        'Subscription created, sending confirmation email',
+        'Subscription created, requesting verification',
       );
-      await notifier.sendConfirmationEmail({
+      const { token } = await verificationClient.createVerification({
         email,
         repoFullName,
-        confirmToken: subscription.confirmToken,
         unsubToken: subscription.unsubToken,
+      });
+      await subscriptionRepository.updateById(subscription.id, {
+        confirmToken: token,
       });
     },
 
@@ -111,7 +115,7 @@ export default fp(
       createSubscriptionService({
         githubService: fastify.githubService,
         subscriptionRepository: fastify.subscriptionRepository,
-        notifier: fastify.notifier,
+        verificationClient: fastify.verificationClient,
         log: fastify.log,
       }),
     );
@@ -119,6 +123,6 @@ export default fp(
   },
   {
     name: 'subscriptionService',
-    dependencies: ['ghRepoRepository', 'githubService', 'notifier'],
+    dependencies: ['ghRepoRepository', 'githubService', 'verificationClient'],
   },
 );

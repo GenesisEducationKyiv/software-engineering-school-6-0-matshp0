@@ -9,26 +9,19 @@ declare module 'fastify' {
       POSTGRES_USER: string;
       POSTGRES_PASSWORD: string;
       POSTGRES_DATABASE: string;
-      GITHUB_TOKEN: string;
       RABBITMQ_URL: string;
-      APP_URL: string;
-      SCAN_INTERVAL: number;
-      MAIL_VERIFICATION_URL: string;
     };
   }
 }
 
 const schema = {
   type: 'object',
-  required: [
-    'POSTGRES_HOST',
-    'POSTGRES_PORT',
-    'POSTGRES_USER',
-    'POSTGRES_PASSWORD',
-    'POSTGRES_DATABASE',
-    'GITHUB_TOKEN',
-  ],
+  required: ['POSTGRES_USER', 'POSTGRES_PASSWORD', 'POSTGRES_DATABASE'],
   properties: {
+    PORT: {
+      type: 'number',
+      default: 3002,
+    },
     POSTGRES_HOST: {
       type: 'string',
       default: 'localhost',
@@ -46,24 +39,9 @@ const schema = {
     POSTGRES_DATABASE: {
       type: 'string',
     },
-    GITHUB_TOKEN: {
-      type: 'string',
-    },
     RABBITMQ_URL: {
       type: 'string',
       default: 'amqp://localhost:5672',
-    },
-    APP_URL: {
-      type: 'string',
-      default: 'http://localhost:3000',
-    },
-    SCAN_INTERVAL: {
-      type: 'number',
-      default: 5,
-    },
-    MAIL_VERIFICATION_URL: {
-      type: 'string',
-      default: 'http://localhost:3002',
     },
   },
 };

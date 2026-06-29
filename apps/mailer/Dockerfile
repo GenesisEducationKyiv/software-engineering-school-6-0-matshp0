@@ -9,26 +9,26 @@ WORKDIR /app
 FROM base AS builder
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/email/package.json ./apps/email/
+COPY apps/mailer/package.json ./apps/mailer/
 COPY packages/contracts/package.json ./packages/contracts/
-RUN CI=1 pnpm install --frozen-lockfile --filter @github-notifier/email...
+RUN CI=1 pnpm install --frozen-lockfile --filter @github-notifier/mailer...
 
 COPY packages/contracts ./packages/contracts
-COPY apps/email ./apps/email
+COPY apps/mailer ./apps/mailer
 
-RUN pnpm --filter @github-notifier/email... build
+RUN pnpm --filter @github-notifier/mailer... build
 
 
 FROM base AS production
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-COPY apps/email/package.json ./apps/email/
+COPY apps/mailer/package.json ./apps/mailer/
 COPY packages/contracts/package.json ./packages/contracts/
-RUN CI=1 pnpm install --frozen-lockfile --prod --filter @github-notifier/email...
+RUN CI=1 pnpm install --frozen-lockfile --prod --filter @github-notifier/mailer...
 
 COPY --from=builder /app/packages/contracts/dist ./packages/contracts/dist
-COPY --from=builder /app/apps/email/dist ./apps/email/dist
+COPY --from=builder /app/apps/mailer/dist ./apps/mailer/dist
 
-WORKDIR /app/apps/email
+WORKDIR /app/apps/mailer
 
 CMD ["node", "dist/main.js"]
