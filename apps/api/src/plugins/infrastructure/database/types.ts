@@ -5,7 +5,11 @@ export type Generated<T> =
     ? ColumnType<S, I | undefined, U>
     : ColumnType<T, T | undefined, T>;
 
-export type SubscriptionStatus = 'confirmed' | 'pending' | 'unsubscribed';
+export type SubscriptionStatus =
+  | 'confirmed'
+  | 'pending'
+  | 'unsubscribed'
+  | 'awaiting_confirmation';
 
 export type OutboxEventStatus = 'pending' | 'processed' | 'failed';
 

@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import { RoutingKey } from '@github-notifier/contracts/mailer';
 import type {
+  CancelVerificationRequest,
   CreateVerificationRequest,
   CreateVerificationResponse,
 } from '@github-notifier/contracts/verification';
@@ -48,6 +49,11 @@ export function createVerificationService(deps: VerificationServiceDeps) {
       );
 
       return { token: verification.token };
+    },
+
+    async cancelVerification(req: CancelVerificationRequest): Promise<void> {
+      await verificationRepository.markCancelledByToken(req.token);
+      log.info('Verification cancelled (saga compensation)');
     },
   };
 }

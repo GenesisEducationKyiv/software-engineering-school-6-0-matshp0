@@ -7,3 +7,7 @@ export interface CreateVerificationRequest {
 export interface CreateVerificationResponse {
   token: string;
 }
+
+export interface CancelVerificationRequest {
+  token: string;
+}

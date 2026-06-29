@@ -36,10 +36,38 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
   const { githubService, subscriptionRepository, verificationClient, log } =
     deps;
 
+  // Saga compensations — best-effort, must never mask the original failure.
+  async function compensateSubscription(subscriptionId: string) {
+    try {
+      await subscriptionRepository.delete(subscriptionId);
+    } catch (err) {
+      log.error(
+        { err, subscriptionId },
+        'Saga compensation failed: could not delete subscription',
+      );
+    }
+  }
+
+  async function compensateVerification(token: string) {
+    try {
+      await verificationClient.cancelVerification({ token });
+    } catch (err) {
+      log.error(
+        { err },
+        'Saga compensation failed: could not cancel verification',
+      );
+    }
+  }
+
   return {
+    // Orchestrated saga (api is the orchestrator):
+    //   T1 (local)  create subscription
+    //   T2 (remote) request verification  -> compensate: delete subscription
+    //   T3 (local)  persist token + state -> compensate: cancel verification + delete subscription
     async subscribe(email: string, repoFullName: string) {
-      log.info({ email, repo: repoFullName }, 'Creating subscription');
+      log.info({ email, repo: repoFullName }, 'Subscribe saga: starting');
       const ghRepo = await githubService.ensureRepoExists(repoFullName);
+
       let subscription;
       try {
         subscription = await subscriptionRepository.create({
@@ -54,18 +82,43 @@ export function createSubscriptionService(deps: SubscriptionServiceDeps) {
         }
         throw error;
       }
+
+      let token: string;
+      try {
+        const result = await verificationClient.createVerification({
+          email,
+          repoFullName,
+          unsubToken: subscription.unsubToken,
+        });
+        token = result.token;
+      } catch (error) {
+        log.error(
+          { err: error, subscriptionId: subscription.id },
+          'Subscribe saga: verification request failed, compensating',
+        );
+        await compensateSubscription(subscription.id);
+        throw error;
+      }
+
+      try {
+        await subscriptionRepository.updateById(subscription.id, {
+          confirmToken: token,
+          status: 'awaiting_confirmation',
+        });
+      } catch (error) {
+        log.error(
+          { err: error, subscriptionId: subscription.id },
+          'Subscribe saga: persisting verification failed, compensating',
+        );
+        await compensateVerification(token);
+        await compensateSubscription(subscription.id);
+        throw error;
+      }
+
       log.info(
         { subscriptionId: subscription.id, email, repo: repoFullName },
-        'Subscription created, requesting verification',
+        'Subscribe saga: completed',
       );
-      const { token } = await verificationClient.createVerification({
-        email,
-        repoFullName,
-        unsubToken: subscription.unsubToken,
-      });
-      await subscriptionRepository.updateById(subscription.id, {
-        confirmToken: token,
-      });
     },
 
     async confirmSubscription(token: string) {

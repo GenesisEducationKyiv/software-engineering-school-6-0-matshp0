@@ -19,6 +19,14 @@ export class VerificationRepository {
       .returningAll()
       .executeTakeFirstOrThrow();
   }
+
+  markCancelledByToken(token: string) {
+    return this.db
+      .updateTable('verifications')
+      .set({ status: 'cancelled' })
+      .where('token', '=', token)
+      .execute();
+  }
 }
 
 export default fp(

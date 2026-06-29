@@ -21,6 +21,7 @@ function buildMockDeps() {
     },
     verificationClient: {
       createVerification: vi.fn().mockResolvedValue({ token: 'verif-tok' }),
+      cancelVerification: vi.fn().mockResolvedValue(undefined),
     },
     log: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
   };
@@ -77,7 +78,7 @@ describe('createSubscriptionService', () => {
       });
       expect(deps.subscriptionRepository.updateById).toHaveBeenCalledWith(
         subscription.id,
-        { confirmToken: 'verif-tok' },
+        { confirmToken: 'verif-tok', status: 'awaiting_confirmation' },
       );
     });
 
@@ -91,6 +92,44 @@ describe('createSubscriptionService', () => {
         service.subscribe('user@test.com', 'owner/repo'),
       ).rejects.toBeInstanceOf(ConflictError);
       expect(deps.verificationClient.createVerification).not.toHaveBeenCalled();
+    });
+
+    it('compensates by deleting the subscription when the verification request fails', async () => {
+      const subscription = buildSubscription();
+      deps.githubService.ensureRepoExists.mockResolvedValue(buildRepo());
+      deps.subscriptionRepository.create.mockResolvedValue(subscription);
+      deps.verificationClient.createVerification.mockRejectedValue(
+        new Error('verification service down'),
+      );
+
+      await expect(
+        service.subscribe('user@test.com', 'owner/repo'),
+      ).rejects.toThrow('verification service down');
+
+      expect(deps.subscriptionRepository.delete).toHaveBeenCalledWith(
+        subscription.id,
+      );
+      expect(deps.verificationClient.cancelVerification).not.toHaveBeenCalled();
+    });
+
+    it('compensates by cancelling verification and deleting the subscription when persisting the token fails', async () => {
+      const subscription = buildSubscription();
+      deps.githubService.ensureRepoExists.mockResolvedValue(buildRepo());
+      deps.subscriptionRepository.create.mockResolvedValue(subscription);
+      deps.subscriptionRepository.updateById.mockRejectedValue(
+        new Error('db write failed'),
+      );
+
+      await expect(
+        service.subscribe('user@test.com', 'owner/repo'),
+      ).rejects.toThrow('db write failed');
+
+      expect(deps.verificationClient.cancelVerification).toHaveBeenCalledWith({
+        token: 'verif-tok',
+      });
+      expect(deps.subscriptionRepository.delete).toHaveBeenCalledWith(
+        subscription.id,
+      );
     });
   });
 

@@ -5,7 +5,10 @@ export interface ISubscriptionRepository {
   }): Promise<{ id: string; confirmToken: string; unsubToken: string }>;
   updateById(
     id: string,
-    data: { status?: 'confirmed'; confirmToken?: string },
+    data: {
+      status?: 'confirmed' | 'awaiting_confirmation';
+      confirmToken?: string;
+    },
   ): Promise<unknown>;
   findByConfirmToken(
     token: string,

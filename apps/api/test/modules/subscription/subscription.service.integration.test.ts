@@ -46,6 +46,7 @@ function mockOctokitRepos(
 function mockVerificationClient(fastify: FastifyInstance) {
   Object.assign(fastify.verificationClient, {
     createVerification: vi.fn().mockResolvedValue({ token: STUB_TOKEN }),
+    cancelVerification: vi.fn().mockResolvedValue(undefined),
   });
 }
 
@@ -70,7 +71,7 @@ describe('SubscriptionService (integration)', () => {
   // ─── subscribe() ───────────────────────────────────────────────────────────
 
   describe('subscribe()', () => {
-    it('creates a pending subscription in the DB', async () => {
+    it('creates a subscription awaiting confirmation in the DB', async () => {
       await fastify.subscriptionService.subscribe(TEST_EMAIL, TEST_REPO);
 
       const rows = await fastify.kysely
@@ -78,7 +79,10 @@ describe('SubscriptionService (integration)', () => {
         .selectAll()
         .execute();
       expect(rows).toHaveLength(1);
-      expect(rows[0]).toMatchObject({ email: TEST_EMAIL, status: 'pending' });
+      expect(rows[0]).toMatchObject({
+        email: TEST_EMAIL,
+        status: 'awaiting_confirmation',
+      });
     });
 
     it('requests verification and stores the returned token', async () => {

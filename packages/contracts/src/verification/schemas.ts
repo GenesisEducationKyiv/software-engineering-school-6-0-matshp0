@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type {
+  CancelVerificationRequest,
   CreateVerificationRequest,
   CreateVerificationResponse,
 } from './types.js';
@@ -12,6 +13,11 @@ export const createVerificationRequestSchema: z.ZodType<CreateVerificationReques
   });
 
 export const createVerificationResponseSchema: z.ZodType<CreateVerificationResponse> =
+  z.object({
+    token: z.string(),
+  });
+
+export const cancelVerificationRequestSchema: z.ZodType<CancelVerificationRequest> =
   z.object({
     token: z.string(),
   });

@@ -37,6 +37,7 @@ enum subscription_status {
   pending
   confirmed
   unsubscribed
+  awaiting_confirmation
 }
 
 model NotificationOutbox {

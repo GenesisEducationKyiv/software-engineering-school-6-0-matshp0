@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import type {
+  CancelVerificationRequest,
   CreateVerificationRequest,
   CreateVerificationResponse,
 } from '@github-notifier/contracts/verification';
@@ -10,6 +11,7 @@ export interface VerificationClient {
   createVerification(
     req: CreateVerificationRequest,
   ): Promise<CreateVerificationResponse>;
+  cancelVerification(req: CancelVerificationRequest): Promise<void>;
 }
 
 declare module 'fastify' {
@@ -28,6 +30,7 @@ export function createVerificationClient(
 ): VerificationClient {
   const { baseUrl, log } = deps;
   const endpoint = `${baseUrl}/internal/verifications`;
+  const cancelEndpoint = `${endpoint}/cancel`;
 
   return {
     async createVerification(req) {
@@ -47,6 +50,23 @@ export function createVerificationClient(
       }
 
       return (await response.json()) as CreateVerificationResponse;
+    },
+
+    async cancelVerification(req) {
+      const response = await fetch(cancelEndpoint, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(req),
+      });
+
+      if (!response.ok) {
+        const body = await response.text();
+        log.error(
+          { status: response.status, body },
+          'Verification cancel request failed',
+        );
+        throw new Error(`Verification service responded ${response.status}`);
+      }
     },
   };
 }
