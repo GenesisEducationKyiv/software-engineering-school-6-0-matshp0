@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import fp from 'fastify-plugin';
 import type { Selectable } from 'kysely';
-import { RoutingKey } from '@github-notifier/contracts/mailer';
+import { RoutingKey } from '@github-notifier/contracts/mailer/messaging';
 import type { Repositories } from '../../plugins/infrastructure/database/types.js';
 import { isGitHubApiError } from '../../common/errors/index.js';
 

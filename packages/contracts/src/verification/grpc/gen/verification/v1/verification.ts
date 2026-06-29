@@ -297,13 +297,8 @@ export const CancelVerificationResponse: MessageFns<CancelVerificationResponse> 
   },
 };
 
-/**
- * Mail verification service — gRPC counterpart of the REST
- * POST /internal/verifications and /internal/verifications/cancel endpoints.
- */
 export type MailVerificationServiceService = typeof MailVerificationServiceService;
 export const MailVerificationServiceService = {
-  /** Create a verification record and trigger the confirmation email. */
   createVerification: {
     path: "/verification.v1.MailVerificationService/CreateVerification" as const,
     requestStream: false as const,
@@ -315,7 +310,6 @@ export const MailVerificationServiceService = {
       Buffer.from(CreateVerificationResponse.encode(value).finish()),
     responseDeserialize: (value: Buffer): CreateVerificationResponse => CreateVerificationResponse.decode(value),
   },
-  /** Compensation: cancel a previously created verification. */
   cancelVerification: {
     path: "/verification.v1.MailVerificationService/CancelVerification" as const,
     requestStream: false as const,
@@ -330,14 +324,11 @@ export const MailVerificationServiceService = {
 } as const;
 
 export interface MailVerificationServiceServer extends UntypedServiceImplementation {
-  /** Create a verification record and trigger the confirmation email. */
   createVerification: handleUnaryCall<CreateVerificationRequest, CreateVerificationResponse>;
-  /** Compensation: cancel a previously created verification. */
   cancelVerification: handleUnaryCall<CancelVerificationRequest, CancelVerificationResponse>;
 }
 
 export interface MailVerificationServiceClient extends Client {
-  /** Create a verification record and trigger the confirmation email. */
   createVerification(
     request: CreateVerificationRequest,
     callback: (error: ServiceError | null, response: CreateVerificationResponse) => void,
@@ -353,7 +344,6 @@ export interface MailVerificationServiceClient extends Client {
     options: Partial<CallOptions>,
     callback: (error: ServiceError | null, response: CreateVerificationResponse) => void,
   ): ClientUnaryCall;
-  /** Compensation: cancel a previously created verification. */
   cancelVerification(
     request: CancelVerificationRequest,
     callback: (error: ServiceError | null, response: CancelVerificationResponse) => void,

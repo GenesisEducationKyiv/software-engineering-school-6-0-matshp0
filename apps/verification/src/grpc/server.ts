@@ -3,7 +3,7 @@ import type { FastifyBaseLogger } from 'fastify';
 import {
   MailVerificationServiceService,
   type MailVerificationServiceServer,
-} from '@github-notifier/contracts/grpc';
+} from '@github-notifier/contracts/verification/grpc';
 import type { createVerificationService } from '../modules/verification/verification.service.js';
 
 type VerificationService = ReturnType<typeof createVerificationService>;

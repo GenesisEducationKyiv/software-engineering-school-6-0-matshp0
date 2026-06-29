@@ -10,4 +10,4 @@ export class NotFoundError extends DomainError {}
 
 export class ConflictError extends DomainError {}
 
-export class AlreadyExistsError extends DomainError {}
+export type DomainErrorName = 'NotFoundError' | 'ConflictError';

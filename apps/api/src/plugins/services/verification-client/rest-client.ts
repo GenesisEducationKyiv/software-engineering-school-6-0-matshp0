@@ -1,6 +1,6 @@
-import type { CreateVerificationResponse } from '@github-notifier/contracts/verification';
-import type { ILogger } from '../../common/interfaces/logger.interface.js';
-import type { VerificationClient } from './verification-client.js';
+import type { CreateVerificationResponse } from '@github-notifier/contracts/verification/http';
+import type { ILogger } from '../../../common/interfaces/logger.interface.js';
+import type { VerificationClient } from './index.js';
 
 export interface RestVerificationClientDeps {
   baseUrl: string;

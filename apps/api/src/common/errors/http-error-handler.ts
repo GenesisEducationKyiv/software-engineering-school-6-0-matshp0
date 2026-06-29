@@ -4,8 +4,9 @@ import type {
   FastifyReply,
   FastifyRequest,
 } from 'fastify';
+import { type DomainErrorName, DomainError } from './index.js';
 
-const DOMAIN_ERROR_STATUS: Record<string, number> = {
+const DOMAIN_ERROR_STATUS: Record<DomainErrorName, number> = {
   NotFoundError: 404,
   ConflictError: 409,
 };
@@ -21,8 +22,9 @@ export function HttpErrorHandler(
       params: request.params,
     };
 
-    const domainStatus = DOMAIN_ERROR_STATUS[err.name];
-    if (domainStatus) {
+    if (err instanceof DomainError) {
+      const domainStatus =
+        DOMAIN_ERROR_STATUS[err.name as DomainErrorName] ?? 500;
       fastify.log.warn({ err, request: reqCtx }, 'Domain error');
       reply.code(domainStatus);
       return { message: err.message };

@@ -4,7 +4,7 @@ import {
   RoutingKey,
   type ConfirmationEmailEvent,
   type ReleaseEmailEvent,
-} from '@github-notifier/contracts/mailer';
+} from '@github-notifier/contracts/mailer/messaging';
 import type { Notifier } from '../../modules/subscription/subscription.service.js';
 import type { ILogger } from '../../common/interfaces/logger.interface.js';
 import type { Publisher } from '../infrastructure/rabbitmq/rabbitmq.js';

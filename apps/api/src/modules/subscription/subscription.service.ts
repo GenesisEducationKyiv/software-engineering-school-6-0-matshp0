@@ -8,11 +8,11 @@ import {
 import type {
   ConfirmationEmailEvent,
   ReleaseEmailEvent,
-} from '@github-notifier/contracts/mailer';
+} from '@github-notifier/contracts/mailer/messaging';
 import type { ISubscriptionRepository } from '../../common/interfaces/repositories/subscription.repository.interface.js';
 import type { IGithubService } from '../../common/interfaces/services/github.service.interface.js';
 import type { ILogger } from '../../common/interfaces/logger.interface.js';
-import type { VerificationClient } from '../../plugins/services/verification-client.js';
+import type { VerificationClient } from '../../plugins/services/verification-client/index.js';
 
 export interface Notifier {
   sendConfirmationEmail(event: ConfirmationEmailEvent): Promise<void>;

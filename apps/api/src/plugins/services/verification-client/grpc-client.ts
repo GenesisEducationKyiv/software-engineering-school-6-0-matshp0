@@ -1,8 +1,8 @@
 import * as grpc from '@grpc/grpc-js';
-import { MailVerificationServiceClient } from '@github-notifier/contracts/grpc';
-import type { CreateVerificationResponse } from '@github-notifier/contracts/verification';
-import type { ILogger } from '../../common/interfaces/logger.interface.js';
-import type { VerificationClient } from './verification-client.js';
+import { MailVerificationServiceClient } from '@github-notifier/contracts/verification/grpc';
+import type { CreateVerificationResponse } from '@github-notifier/contracts/verification/http';
+import type { ILogger } from '../../../common/interfaces/logger.interface.js';
+import type { VerificationClient } from './index.js';
 
 export interface GrpcVerificationClientDeps {
   address: string;

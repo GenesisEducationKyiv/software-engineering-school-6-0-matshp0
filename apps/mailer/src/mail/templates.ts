@@ -1,7 +1,7 @@
 import type {
   ConfirmationEmailEvent,
   ReleaseEmailEvent,
-} from '@github-notifier/contracts/mailer';
+} from '@github-notifier/contracts/mailer/messaging';
 
 const FROM = 'GitHub Notifier <noreply@github-notifier.local>';
 

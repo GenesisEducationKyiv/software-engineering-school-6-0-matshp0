@@ -4,24 +4,18 @@
   "private": true,
   "license": "UNLICENSED",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
+    "./mailer/messaging": {
+      "types": "./dist/mailer/messaging/index.d.ts",
+      "default": "./dist/mailer/messaging/index.js"
     },
-    "./mailer": {
-      "types": "./dist/mailer/index.d.ts",
-      "default": "./dist/mailer/index.js"
+    "./verification/http": {
+      "types": "./dist/verification/http/index.d.ts",
+      "default": "./dist/verification/http/index.js"
     },
-    "./verification": {
-      "types": "./dist/verification/index.d.ts",
-      "default": "./dist/verification/index.js"
-    },
-    "./grpc": {
-      "types": "./dist/grpc.d.ts",
-      "default": "./dist/grpc.js"
+    "./verification/grpc": {
+      "types": "./dist/verification/grpc/index.d.ts",
+      "default": "./dist/verification/grpc/index.js"
     }
   },
   "files": [

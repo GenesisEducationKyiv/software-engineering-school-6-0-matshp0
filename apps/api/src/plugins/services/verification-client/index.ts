@@ -4,9 +4,9 @@ import type {
   CancelVerificationRequest,
   CreateVerificationRequest,
   CreateVerificationResponse,
-} from '@github-notifier/contracts/verification';
-import { createRestVerificationClient } from './verification-rest-client.js';
-import { createGrpcVerificationClient } from './verification-grpc-client.js';
+} from '@github-notifier/contracts/verification/http';
+import { createRestVerificationClient } from './rest-client.js';
+import { createGrpcVerificationClient } from './grpc-client.js';
 
 export interface VerificationClient {
   createVerification(

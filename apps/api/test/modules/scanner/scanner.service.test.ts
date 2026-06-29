@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createScannerService } from '@/modules/scanner/scanner.service.ts';
-import { RoutingKey } from '@github-notifier/contracts/mailer';
+import { RoutingKey } from '@github-notifier/contracts/mailer/messaging';
 import type { FastifyInstance } from 'fastify';
 import type { Selectable } from 'kysely';
 import type { Repositories } from '@/plugins/infrastructure/database/types.ts';
