@@ -40,6 +40,7 @@ services:
         required: false
     environment:
       POSTGRES_HOST: postgres
+      DATABASE_URL: postgresql://myuser:mypassword@postgres:5432/github_notifier
     depends_on:
       postgres:
         condition: service_healthy
